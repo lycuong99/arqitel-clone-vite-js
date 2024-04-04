@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import fragment from '../shaders/fragment.glsl';
 import vertex from '../shaders/vertex.glsl';
+import { GUI } from 'dat.gui';
 
 const device = {
   width: window.innerWidth,
@@ -17,6 +18,7 @@ export default class App {
     this.canvas = canvas;
     this.setLoaders();
     this.init();
+    this.setupFBO();
 
     this.setLights();
     this.setGeometry();
@@ -26,7 +28,15 @@ export default class App {
     this.render();
     this.setResize();
   }
-
+  setUpSettings() {
+    this.settings = {
+      process: 0
+    };
+    this.gui = new GUI();
+    this.gui.add(this.settings, 'process', 0, 1).onChange((value) => {
+      this.fboMaterial.uniforms.uProcess.value = value;
+    });
+  }
   setLights() {
     this.ambientLight = new THREE.AmbientLight(new THREE.Color(1, 1, 1, 1));
     this.scene.add(this.ambientLight);
@@ -47,9 +57,7 @@ export default class App {
     const spotLightHelper = new THREE.SpotLightHelper(spotLight);
     this.scene.add(spotLightHelper);
   }
-  setLoaders() {
-    this.gltfLoader = new GLTFLoader();
-  }
+
   init() {
     this.scene = new THREE.Scene();
 
@@ -100,20 +108,47 @@ export default class App {
     this.clock = new THREE.Clock();
   }
 
-  setGeometry() {
-    this.planeGeometry = new THREE.PlaneGeometry(1, 1, 128, 128);
-    this.planeMaterial = new THREE.ShaderMaterial({
-      side: THREE.DoubleSide,
-      // wireframe: true,
-      fragmentShader: fragment,
-      vertexShader: vertex,
-      uniforms: {
-        progress: { type: 'f', value: 0 }
-      }
+  setLoaders() {
+    this.gltfLoader = new GLTFLoader();
+  }
+  //Dynamic
+  setupFBO() {
+    this.fbo = new THREE.WebGLRenderTarget(device.width, device.height, {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat,
+      stencilBuffer: false,
+      depthBuffer: false
     });
 
-    this.planeMesh = new THREE.Mesh(this.planeGeometry, this.planeMaterial);
-    this.scene.add(this.planeMesh);
+    this.fboCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1);
+    this.fboScene = new THREE.Scene();
+    this.fboMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uProcess: { value: 0 },
+        uFBO: { value: null }
+      },
+      vertexShader: vertex,
+      fragmentShader: fragment
+    });
+    this.fbogeo = new THREE.PlaneGeometry(2, 2);
+    this.fboMesh = new THREE.Mesh(this.fbogeo, this.fboMaterial);
+    this.fboScene.add(this.fboMesh);
+  }
+
+  setGeometry() {
+    // this.planeGeometry = new THREE.PlaneGeometry(1, 1, 128, 128);
+    // this.planeMaterial = new THREE.ShaderMaterial({
+    //   side: THREE.DoubleSide,
+    //   // wireframe: true,
+    //   fragmentShader: fragment,
+    //   vertexShader: vertex,
+    //   uniforms: {
+    //     progress: { type: 'f', value: 0 }
+    //   }
+    // });
+    // this.planeMesh = new THREE.Mesh(this.planeGeometry, this.planeMaterial);
+    // this.scene.add(this.planeMesh);
   }
 
   addObjects() {
@@ -131,15 +166,13 @@ export default class App {
       uTime: { value: 0 },
       aoMap: { value: this.aoTexture },
       uFBO: {
-        value: new THREE.TextureLoader().load(
-          '/texture/texture-displacement-map.png'
-        )
+        value: new THREE.TextureLoader().load('/texture/fbo.png')
       },
       light_color: { value: new THREE.Color('#ffe9e9') },
-      ramp_color_one: { value: new THREE.Color('#ff6b6b') },
-      ramp_color_two: { value: new THREE.Color('#ffc400') },
-      ramp_color_three: { value: new THREE.Color('#ff9100') },
-      ramp_color_four: { value: new THREE.Color('#ff6b6b') }
+      ramp_color_one: { value: new THREE.Color('#06082D') },
+      ramp_color_two: { value: new THREE.Color('#020284') },
+      ramp_color_three: { value: new THREE.Color('#0000ff') },
+      ramp_color_four: { value: new THREE.Color('#71c7f5') }
     };
 
     this.material.onBeforeCompile = (shader) => {
@@ -152,6 +185,7 @@ export default class App {
       shader.vertexShader = shader.vertexShader.replace(
         `#include <common>`,
         /*glsl*/ `
+          #include <common>
           uniform sampler2D uFBO;
           uniform float uTime;
           uniform vec3 light_color;
@@ -160,6 +194,8 @@ export default class App {
           uniform vec3 ramp_color_three;
           uniform vec3 ramp_color_four;
           attribute vec2 instanceUV;
+          varying float vHeight;
+          varying float vHeightUV;
           
           `
       );
@@ -168,15 +204,47 @@ export default class App {
         `#include <begin_vertex>`,
         /* glsl */ `
         #include <begin_vertex>
+        vHeightUV = clamp(position.y*2., 0.0, 1.0);
         vec4 transition = texture2D(uFBO, instanceUV);
         // (x,y,z) (r,b,g)
         //SCALE
-        transformed.y *=  (transition.x);
-        
+        transformed *=  (transition.x);
+        vHeight = transformed.y;
           
           `
       );
-      console.log(shader.vertexShader);
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        `#include <common>`,
+        /*glsl*/ `
+          #include <common>
+          uniform sampler2D uFBO;
+          uniform float uTime;
+          uniform vec3 light_color;
+          uniform vec3 ramp_color_one;
+          uniform vec3 ramp_color_two;
+          uniform vec3 ramp_color_three;
+          uniform vec3 ramp_color_four;
+          varying float vHeight;
+          varying float vHeightUV;
+
+          `
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        `#include <color_fragment>`,
+        /* glsl */ `
+          #include <color_fragment>
+
+          //sáng ở trên
+          vec3 hightlight = mix(ramp_color_three, ramp_color_four, vHeightUV);
+
+          diffuseColor.rgb = ramp_color_two;
+          diffuseColor.rgb = mix(diffuseColor.rgb, ramp_color_three, vHeightUV);
+          diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp(vHeight/10., -3., 0.1));
+          `
+      );
+      // console.log(shader.vertexShader);
     };
 
     this.gltfLoader.load('/model/bar.glb', (gltf) => {
@@ -200,22 +268,23 @@ export default class App {
       let instanceUV = new Float32Array(instanceSize * 2); //xy
       for (let i = 0; i < this.iSize; i++) {
         for (let j = 0; j < this.iSize; j++) {
+          instanceUV.set(
+            [i / this.iSize, j / this.iSize],
+            2 * (i * this.iSize + j)
+          );
+
           {
-            instanceUV.set(
-              [i / this.iSize, j / this.iSize],
-              2 * (i * this.iSize + j)
-            );
+            let x = w * (i - this.iSize / 2);
+            let y = 0;
+            let z = w * (j - this.iSize / 2);
+
+            const position = new THREE.Vector3(x, y, z);
+
+            let matrix = new THREE.Matrix4();
+            matrix.setPosition(position);
+
+            this.instanceMesh.setMatrixAt(i * this.iSize + j, matrix);
           }
-          let x = w * (i - this.iSize / 2);
-          let y = 0;
-          let z = w * (j - this.iSize / 2);
-
-          const position = new THREE.Vector3(x, y, z);
-
-          let matrix = new THREE.Matrix4();
-          matrix.setPosition(position);
-
-          this.instanceMesh.setMatrixAt(i * this.iSize + j, matrix);
         }
       }
 
@@ -231,10 +300,9 @@ export default class App {
   render() {
     const elapsedTime = this.clock.getElapsedTime();
 
-    this.planeMesh.rotation.x = 0.2 * elapsedTime;
-    this.planeMesh.rotation.y = 0.1 * elapsedTime;
+    // this.renderer.render(this.scene, this.camera);
+    this.renderer.render(this.fboScene, this.fboCamera);
 
-    this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.render.bind(this));
   }
 
