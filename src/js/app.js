@@ -16,6 +16,7 @@ const device = {
 export default class App {
   constructor(canvas) {
     this.canvas = canvas;
+    this.setUpSettings();
     this.setLoaders();
     this.init();
     this.setupFBO();
@@ -33,8 +34,8 @@ export default class App {
       process: 0
     };
     this.gui = new GUI();
-    this.gui.add(this.settings, 'process', 0, 1).onChange((value) => {
-      this.fboMaterial.uniforms.uProcess.value = value;
+    this.gui.add(this.settings, 'process', 0, 1, 0.01).onChange((value) => {
+      this.fboMaterial.uniforms.uProgress.value = value;
     });
   }
   setLights() {
@@ -113,20 +114,22 @@ export default class App {
   }
   //Dynamic
   setupFBO() {
-    this.fbo = new THREE.WebGLRenderTarget(device.width, device.height, {
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
-      format: THREE.RGBAFormat,
-      stencilBuffer: false,
-      depthBuffer: false
-    });
+    this.fbo = new THREE.WebGLRenderTarget(device.width, device.height);
 
     this.fboCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1);
     this.fboScene = new THREE.Scene();
+
+    let textureLoader = new THREE.TextureLoader();
     this.fboMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        uProcess: { value: 0 },
-        uFBO: { value: null }
+        uProgress: { value: 0 },
+        uFBO: { value: null },
+        uState1: {
+          value: textureLoader.load('/texture/fbo.png')
+        },
+        uState2: {
+          value: textureLoader.load('/texture/state2.jpg')
+        }
       },
       vertexShader: vertex,
       fragmentShader: fragment
@@ -151,7 +154,22 @@ export default class App {
     // this.scene.add(this.planeMesh);
   }
 
+  addDebugDynamicTexturePlane() {
+    this.debug = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      new THREE.MeshBasicMaterial({
+        map: this.fbo.texture,
+        side: THREE.DoubleSide
+      })
+    );
+
+    this.debug.position.set(0, 100, 0);
+
+    this.scene.add(this.debug);
+  }
+
   addObjects() {
+    this.addDebugDynamicTexturePlane();
     this.aoTexture = new THREE.TextureLoader().load('/texture/ao.png');
     this.aoTexture.flipY = false;
 
@@ -208,7 +226,9 @@ export default class App {
         vec4 transition = texture2D(uFBO, instanceUV);
         // (x,y,z) (r,b,g)
         //SCALE
-        transformed *=  (transition.x);
+        transformed *=  (transition.g);
+        transformed.y =  transition.r*10.;
+
         vHeight = transformed.y;
           
           `
@@ -241,7 +261,7 @@ export default class App {
 
           diffuseColor.rgb = ramp_color_two;
           diffuseColor.rgb = mix(diffuseColor.rgb, ramp_color_three, vHeightUV);
-          diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp(vHeight/10., -3., 0.1));
+          diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp(vHeight/10., -2., 0.3));
           `
       );
       // console.log(shader.vertexShader);
@@ -300,8 +320,14 @@ export default class App {
   render() {
     const elapsedTime = this.clock.getElapsedTime();
 
-    // this.renderer.render(this.scene, this.camera);
+    this.renderer.setRenderTarget(this.fbo);
     this.renderer.render(this.fboScene, this.fboCamera);
+
+    // dynamic texture -> Instance Mesh Material
+    this.uniforms.uFBO.value = this.fbo.texture;
+
+    this.renderer.setRenderTarget(null);
+    this.renderer.render(this.scene, this.camera);
 
     requestAnimationFrame(this.render.bind(this));
   }
