@@ -12,7 +12,6 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "postinstall": "husky & playwright install",
     "clean:dist": "npx rimraf dist",
     "clean:report": "npx rimraf playwright-report",
     "test:chrome": "npx playwright test --headed --project=chromium",
