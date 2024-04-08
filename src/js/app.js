@@ -117,7 +117,7 @@ export default class App {
     });
   }
   setLights() {
-    this.ambientLight = new THREE.AmbientLight(new THREE.Color(1, 1, 1, 1));
+    this.ambientLight = new THREE.AmbientLight(new THREE.Color(1, 1, 1, 1), 4);
     this.scene.add(this.ambientLight);
 
     const spotLight = new THREE.SpotLight(0xffe9e9, 1600);
@@ -318,7 +318,7 @@ export default class App {
         //SCALE
 
         transformed *=  (transition.g);
-        transformed.y +=  transition.r*100.;
+        transformed.y +=  transition.r*300.;
 
         vHeight = transformed.y;
 
@@ -368,7 +368,7 @@ export default class App {
       this.geometry.scale(40, 40, 40);
       this.scene.add(this.model);
 
-      this.iSize = 50;
+      this.iSize = 100;
       let instanceSize = this.iSize ** 2;
       this.instanceMesh = new THREE.InstancedMesh(
         this.geometry,
