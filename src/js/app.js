@@ -98,7 +98,7 @@ float cnoise(vec3 P){
 export default class App {
   constructor(canvas) {
     this.canvas = canvas;
-   
+
     this.setLoaders();
     this.init();
     this.environment = new Environment(this);
@@ -135,7 +135,7 @@ export default class App {
     });
   }
   addHelpers() {
-    const axesHelper = new THREE.AxesHelper(200);
+    const axesHelper = new THREE.AxesHelper(1000);
     this.scene.add(axesHelper);
   }
   init() {
@@ -244,10 +244,10 @@ export default class App {
     this.aoTexture.flipY = false;
 
     this.material = new THREE.MeshPhysicalMaterial({
-      metalness: 0.5,
-      roughness: 0.75,
+      metalness: 0.3,
+      roughness: 0.41,
       aoMap: this.aoTexture,
-      aoMapIntensity: 1
+      aoMapIntensity: 1.3
     });
 
     this.uniforms = {
@@ -260,7 +260,8 @@ export default class App {
       ramp_color_one: { value: new THREE.Color('#06082D') },
       ramp_color_two: { value: new THREE.Color('#020284') },
       ramp_color_three: { value: new THREE.Color('#0000ff') },
-      ramp_color_four: { value: new THREE.Color('#71c7f5') }
+      ramp_color_four: { value: new THREE.Color('hsl(214, 100%, 70%)') },
+      ramp_color_five: { value: new THREE.Color('#71c7f5') }
     };
 
     this.material.onBeforeCompile = (shader) => {
@@ -297,12 +298,19 @@ export default class App {
         
       
 
-        float n = cnoise(vec3(instanceUV.x*5., instanceUV.y*5., uTime*0.1));  
-        transformed.y += n*60.;
+        // float n = cnoise(vec3(instanceUV.x*5., instanceUV.y*5., uTime*0.1));  
+        // if(transformed.y > 0.1){
+        //   transformed.y *= abs( n*10.);
+        // }
         //by sin wave cirlce
-        // float dist = distance(instanceUV, vec2( 0.5, 0.5));
-        // transformed.y += (sin((dist )*20.+ uTime* 2.) )*10.;
-      
+        float dist = distance(instanceUV, vec2( 0.5, 0.5));
+        if(transformed.y > 0.1){
+        float bienDoX = 1.;
+        float bienDoY = 1.5;
+        // transformed.y *= (sin((dist )*20.+ uTime* 2.) + 10.)*bienDo ;
+        transformed.y *= abs((sin((instanceUV.x)*50.+ uTime* 2.) + 2. )*bienDoX + 1.);
+        transformed.y *= abs((sin((instanceUV.y)*30.+ uTime* 2.) + 2. )*bienDoY);
+        }
 
         vHeightUV = clamp(position.y*2., 0.0, 1.0);
         vec4 transition = texture2D(uFBO, instanceUV);
@@ -346,7 +354,7 @@ export default class App {
 
           diffuseColor.rgb = ramp_color_two;
           diffuseColor.rgb = mix(diffuseColor.rgb, ramp_color_three, vHeightUV);
-          diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp(vHeight/10. -3. , 0., 1.));
+          // diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp((vHeight/10. -3.) , 0., 1.));
           `
       );
       // console.log(shader.vertexShader);
@@ -357,8 +365,8 @@ export default class App {
       this.model = scene.children[0];
       this.model.material = this.material;
       this.geometry = this.model.geometry;
-      
-      const ratio = 3/4
+
+      const ratio = 3 / 4;
       const boxSize = 20;
       this.geometry.scale(boxSize, boxSize, boxSize);
       this.scene.add(this.model);
@@ -371,7 +379,7 @@ export default class App {
         instanceSize
       );
       this.instanceMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      let w = boxSize/ratio;
+      let w = boxSize / ratio;
 
       let instanceUV = new Float32Array(instanceSize * 2); //xy
       for (let i = 0; i < this.iSize; i++) {

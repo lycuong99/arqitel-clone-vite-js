@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 
+const colorO = '#ffe9e9';
 class Environment {
   constructor(context) {
     this.context = context;
@@ -10,16 +11,17 @@ class Environment {
     this.ambientLight = new THREE.AmbientLight(new THREE.Color(1, 1, 1, 1), 4);
     scene.add(this.ambientLight);
 
-    const spotLight = new THREE.SpotLight(0xffe9e9, 1600);
+    const spotLight = new THREE.SpotLight('#dffb09', 10000);
     spotLight.decay = 1.1;
-    spotLight.angle = Math.PI / 2;
+    spotLight.angle = Math.PI / 3.8;
     spotLight.distance = 3000;
-    spotLight.position.set(-80 * 3, 200 * 3, -80 * 3);
+    // spotLight.position.set(-60 * 3, 80 * 3, -60 * 3);
+    spotLight.position.set(-300, 200, -200);
     spotLight.penumbra = 0.5;
     scene.add(spotLight);
 
     let target = new THREE.Object3D();
-    target.position.set(0, -80, 200);
+    target.position.set(0, -0, 0);
     spotLight.target = target;
     // scene.add(spotLight.target);
 
