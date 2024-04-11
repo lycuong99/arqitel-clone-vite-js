@@ -6,6 +6,11 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import fragment from '../shaders/fragment.glsl';
 import vertex from '../shaders/vertex.glsl';
 import { GUI } from 'dat.gui';
+import { gsap } from 'gsap';
+
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Environment from './Environtment';
+gsap.registerPlugin(ScrollTrigger);
 
 const device = {
   width: window.innerWidth,
@@ -13,7 +18,7 @@ const device = {
   pixelRatio: window.devicePixelRatio
 };
 
-const noise = /*glsl*/`
+const noise = /*glsl*/ `
 //	Classic Perlin 3D Noise 
 //	by Stefan Gustavson
 //
@@ -90,22 +95,22 @@ float cnoise(vec3 P){
 }
 `;
 
-
 export default class App {
   constructor(canvas) {
     this.canvas = canvas;
-    this.setUpSettings();
+   
     this.setLoaders();
     this.init();
+    this.environment = new Environment(this);
     this.setupFBO();
-
-    this.setLights();
-    this.setGeometry();
 
     this.addObjects();
 
     this.render();
     this.setResize();
+
+    this.addHelpers();
+    this.setUpSettings();
   }
   setUpSettings() {
     this.settings = {
@@ -115,38 +120,36 @@ export default class App {
     this.gui.add(this.settings, 'process', 0, 1, 0.01).onChange((value) => {
       this.fboMaterial.uniforms.uProgress.value = value;
     });
+
+    let tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: '.sec1',
+        start: 'top top',
+        end: '+=5000',
+        scrub: 1
+      }
+    });
+
+    tl.to(this.fboMaterial.uniforms.uProgress, {
+      value: 1
+    });
   }
-  setLights() {
-    this.ambientLight = new THREE.AmbientLight(new THREE.Color(1, 1, 1, 1), 4);
-    this.scene.add(this.ambientLight);
-
-    const spotLight = new THREE.SpotLight(0xffe9e9, 1600);
-    spotLight.decay = 1.1;
-    spotLight.angle = Math.PI / 2;
-    spotLight.distance = 3000;
-    spotLight.position.set(-80 * 3, 200 * 3, -80 * 3);
-    spotLight.penumbra = 0.5;
-    this.scene.add(spotLight);
-
-    let target = new THREE.Object3D();
-    target.position.set(0, -80, 200);
-    spotLight.target = target;
-    // this.scene.add(spotLight.target);
-
-    const spotLightHelper = new THREE.SpotLightHelper(spotLight);
-    this.scene.add(spotLightHelper);
+  addHelpers() {
+    const axesHelper = new THREE.AxesHelper(200);
+    this.scene.add(axesHelper);
   }
-
   init() {
     this.scene = new THREE.Scene();
 
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      device.width / device.height,
-      0.1,
-      100
-    );
-    this.camera.position.set(0, 0, 2);
+    // {
+    //   this.camera = new THREE.PerspectiveCamera(
+    //     75,
+    //     device.width / device.height,
+    //     0.1,
+    //     2000
+    //   );
+    //   this.camera.position.set(0, 0, 2);
+    // }
 
     {
       let frustumSize = device.height;
@@ -156,8 +159,8 @@ export default class App {
       let right = (frustumSize * aspect) / 2;
       let top = frustumSize / 2;
       let bottom = frustumSize / -2;
-      let near = -2000;
-      let far = 2000;
+      let near = -4000;
+      let far = 4000;
 
       this.camera = new THREE.OrthographicCamera(
         left,
@@ -167,8 +170,11 @@ export default class App {
         near,
         far
       );
-      this.camera.position.set(0, 100, 20);
+      this.camera.position.set(100, 100, 100);
+      this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+      this.camera.zoom = 10;
     }
+
     this.scene.add(this.camera);
 
     //
@@ -180,9 +186,9 @@ export default class App {
     });
     this.renderer.setSize(device.width, device.height);
     this.renderer.setPixelRatio(Math.min(device.pixelRatio, 2));
-    this.renderer.setClearColor('#08092d', 1);
+    // this.renderer.setClearColor('#08092d', 1);
 
-    this.controls = new OrbitControls(this.camera, this.canvas);
+    // this.controls = new OrbitControls(this.camera, this.canvas);
 
     this.clock = new THREE.Clock();
   }
@@ -217,21 +223,6 @@ export default class App {
     this.fboScene.add(this.fboMesh);
   }
 
-  setGeometry() {
-    // this.planeGeometry = new THREE.PlaneGeometry(1, 1, 128, 128);
-    // this.planeMaterial = new THREE.ShaderMaterial({
-    //   side: THREE.DoubleSide,
-    //   // wireframe: true,
-    //   fragmentShader: fragment,
-    //   vertexShader: vertex,
-    //   uniforms: {
-    //     progress: { type: 'f', value: 0 }
-    //   }
-    // });
-    // this.planeMesh = new THREE.Mesh(this.planeGeometry, this.planeMaterial);
-    // this.scene.add(this.planeMesh);
-  }
-
   addDebugDynamicTexturePlane() {
     this.debug = new THREE.Mesh(
       new THREE.PlaneGeometry(100, 100),
@@ -244,6 +235,7 @@ export default class App {
     this.debug.position.set(0, 100, 0);
 
     this.scene.add(this.debug);
+    this.debug.visible = false;
   }
 
   addObjects() {
@@ -365,7 +357,10 @@ export default class App {
       this.model = scene.children[0];
       this.model.material = this.material;
       this.geometry = this.model.geometry;
-      this.geometry.scale(40, 40, 40);
+      
+      const ratio = 3/4
+      const boxSize = 20;
+      this.geometry.scale(boxSize, boxSize, boxSize);
       this.scene.add(this.model);
 
       this.iSize = 100;
@@ -376,7 +371,7 @@ export default class App {
         instanceSize
       );
       this.instanceMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      let w = 60;
+      let w = boxSize/ratio;
 
       let instanceUV = new Float32Array(instanceSize * 2); //xy
       for (let i = 0; i < this.iSize; i++) {
