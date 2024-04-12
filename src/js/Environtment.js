@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 const colorO = '#ffe9e9';
+const color1 = '#dffb09';
 class Environment {
   constructor(context) {
     this.context = context;
@@ -25,8 +26,8 @@ class Environment {
     spotLight.target = target;
     // scene.add(spotLight.target);
 
-    const spotLightHelper = new THREE.SpotLightHelper(spotLight);
-    scene.add(spotLightHelper);
+    // const spotLightHelper = new THREE.SpotLightHelper(spotLight);
+    // scene.add(spotLightHelper);
   }
 }
 

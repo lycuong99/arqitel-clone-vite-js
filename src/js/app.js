@@ -129,14 +129,27 @@ export default class App {
         scrub: 1
       }
     });
+    //stage 1
 
     tl.to(this.fboMaterial.uniforms.uProgress, {
-      value: 1
+      value: 1,
+      onComplete: (self) => {
+        this.uniforms.uProgress.value = self.progress;
+      }
     });
+    // tl.to(this.uniforms.uProgress, {
+    //   value: 1
+    // });
+    // tl.to(this.uniforms.amplitudeWave, {
+    //   value: 0
+    // });
   }
   addHelpers() {
     const axesHelper = new THREE.AxesHelper(1000);
     this.scene.add(axesHelper);
+
+    const gridHelper = new THREE.GridHelper(1000, 100);
+    this.scene.add(gridHelper);
   }
   init() {
     this.scene = new THREE.Scene();
@@ -186,7 +199,7 @@ export default class App {
     });
     this.renderer.setSize(device.width, device.height);
     this.renderer.setPixelRatio(Math.min(device.pixelRatio, 2));
-    // this.renderer.setClearColor('#08092d', 1);
+    this.renderer.setClearColor('#08092d', 1);
 
     // this.controls = new OrbitControls(this.camera, this.canvas);
 
@@ -232,10 +245,10 @@ export default class App {
       })
     );
 
-    this.debug.position.set(0, 100, 0);
+    this.debug.position.set(0, 200, 0);
 
     this.scene.add(this.debug);
-    this.debug.visible = false;
+    // this.debug.visible = false;
   }
 
   addObjects() {
@@ -261,7 +274,10 @@ export default class App {
       ramp_color_two: { value: new THREE.Color('#020284') },
       ramp_color_three: { value: new THREE.Color('#0000ff') },
       ramp_color_four: { value: new THREE.Color('hsl(214, 100%, 70%)') },
-      ramp_color_five: { value: new THREE.Color('#71c7f5') }
+      ramp_color_five: { value: new THREE.Color('#71c7f5') },
+
+      amplitudeWave: { value: 0 },
+      uProgress: { value: 0 }
     };
 
     this.material.onBeforeCompile = (shader) => {
@@ -270,12 +286,14 @@ export default class App {
         ...this.uniforms
       };
 
-      //Modify declare
+      //Modify
+      //declare
       shader.vertexShader = shader.vertexShader.replace(
         `#include <common>`,
         /*glsl*/ `
           #include <common>
           uniform sampler2D uFBO;
+          uniform float uProgress;
           uniform float uTime;
           uniform vec3 light_color;
           uniform vec3 ramp_color_one;
@@ -302,23 +320,36 @@ export default class App {
         // if(transformed.y > 0.1){
         //   transformed.y *= abs( n*10.);
         // }
+
         //by sin wave cirlce
         float dist = distance(instanceUV, vec2( 0.5, 0.5));
         if(transformed.y > 0.1){
-        float bienDoX = 1.;
-        float bienDoY = 1.5;
-        // transformed.y *= (sin((dist )*20.+ uTime* 2.) + 10.)*bienDo ;
-        transformed.y *= abs((sin((instanceUV.x)*50.+ uTime* 2.) + 2. )*bienDoX + 1.);
-        transformed.y *= abs((sin((instanceUV.y)*30.+ uTime* 2.) + 2. )*bienDoY);
+        
+        // float distX  = 1.;
+        float distX = abs(0.5 - instanceUV.x)*2.;
+        float aX = clamp(distX*10. + ( uProgress) * 10., 0.0, 1.0);
+
+        float ampl = 1. * aX;
+        float bienDoX = 1.* ampl;
+        float bienDoY = 1.5 * ampl;
+
+        float lowerBound = 2.;
+        
+        transformed.y *= abs((sin((instanceUV.x)*50.+ uTime* 2.) + lowerBound ) * bienDoX + 1.);
+        transformed.y *= abs((sin((instanceUV.y)*30.+ uTime* 2.) + lowerBound ) * bienDoY);
+        transformed.y = 10.;
+        //by circle
+        // transformed.y *= (sin((distX )*20.+ uTime* 2.) + 1.)*ampl*7.;
         }
 
         vHeightUV = clamp(position.y*2., 0.0, 1.0);
+        //apply transition by dynamic texture
         vec4 transition = texture2D(uFBO, instanceUV);
         // (x,y,z) (r,b,g)
         //SCALE
 
         transformed *=  (transition.g);
-        transformed.y +=  transition.r*300.;
+        transformed.y +=  transition.r*200.;
 
         vHeight = transformed.y;
 
@@ -357,7 +388,6 @@ export default class App {
           // diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp((vHeight/10. -3.) , 0., 1.));
           `
       );
-      // console.log(shader.vertexShader);
     };
 
     this.gltfLoader.load('/model/bar.glb', (gltf) => {
@@ -366,7 +396,8 @@ export default class App {
       this.model.material = this.material;
       this.geometry = this.model.geometry;
 
-      const ratio = 3 / 4;
+      let ratio = 3 / 4;
+      // ratio = 1 / 2;
       const boxSize = 20;
       this.geometry.scale(boxSize, boxSize, boxSize);
       this.scene.add(this.model);
@@ -408,7 +439,7 @@ export default class App {
         'instanceUV',
         new THREE.InstancedBufferAttribute(instanceUV, 2)
       );
-      console.log(this.geometry);
+      console.log(instanceUV);
       this.scene.add(this.instanceMesh);
     });
   }
