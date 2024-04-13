@@ -94,7 +94,7 @@ float cnoise(vec3 P){
   return 2.2 * n_xyz;
 }
 `;
-
+                                                                                                                                                                                                                                                 
 export default class App {
   constructor(canvas) {
     this.canvas = canvas;
@@ -119,27 +119,55 @@ export default class App {
     this.gui = new GUI();
     this.gui.add(this.settings, 'process', 0, 1, 0.01).onChange((value) => {
       this.fboMaterial.uniforms.uProgress.value = value;
+
     });
 
     let tl = gsap.timeline({
       scrollTrigger: {
         trigger: '.sec1',
         start: 'top top',
-        end: '+=5000',
-        scrub: 1
+        end: 'bottom top',
+        endTrigger: '.sec3',
+        scrub: 1,
+        onEnter: (self) => {
+          console.groupEnd();
+          console.group("Stage 1:");
+        }
       }
     });
     //stage 1
 
-    tl.to(this.fboMaterial.uniforms.uProgress, {
-      value: 1,
-      onComplete: (self) => {
-        this.uniforms.uProgress.value = self.progress;
-      }
-    });
-    // tl.to(this.uniforms.uProgress, {
-    //   value: 1
+    // tl.to(this.fboMaterial.uniforms.uProgress, {
+    //   value: 1,
+    //   onComplete: (self) => {
+    //     this.uniforms.uProgress.value = self.progress;
+    //   }
     // });
+    tl.to(this.uniforms.uProgress, {
+      value: 1,
+      onUpdate: (self) => {
+        console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
+
+        this.camera.zoom = 1 + this.uniforms.uProgress.value*0.1;
+            this.camera.updateProjectionMatrix();
+      },
+    });
+    tl.to(this.uniforms.uProgress, {
+      value: 2,
+      onUpdate: (self) => {
+        console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
+        this.camera.zoom = 1 + this.uniforms.uProgress.value*0.1;
+            this.camera.updateProjectionMatrix();
+      },
+    });
+    tl.to(this.uniforms.uProgress, {
+      value: 3,
+      onUpdate: (self) => {
+        console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
+      },
+    });
+
+    
     // tl.to(this.uniforms.amplitudeWave, {
     //   value: 0
     // });
@@ -199,7 +227,7 @@ export default class App {
     });
     this.renderer.setSize(device.width, device.height);
     this.renderer.setPixelRatio(Math.min(device.pixelRatio, 2));
-    this.renderer.setClearColor('#08092d', 1);
+    // this.renderer.setClearColor('#08092d', 1);
 
     // this.controls = new OrbitControls(this.camera, this.canvas);
 
@@ -304,6 +332,9 @@ export default class App {
           varying float vHeight;
           varying float vHeightUV;
 
+          varying float vHesoYForColor;
+          varying vec2 vinstanceUV;
+
           ${noise}
           
           `
@@ -311,7 +342,7 @@ export default class App {
       //
       shader.vertexShader = shader.vertexShader.replace(
         `#include <begin_vertex>`,
-        /* glsl */ `
+        /* glsl*/`
         #include <begin_vertex>
         
       
@@ -326,20 +357,42 @@ export default class App {
         if(transformed.y > 0.1){
         
         // float distX  = 1.;
-        float distX = abs(0.5 - instanceUV.x)*2.;
+        float distX = abs(0.5 - clamp(instanceUV.x*1., 0.0, 1.0))*2.;
+        distX*=5.;
         float aX = clamp(distX*10. + ( uProgress) * 10., 0.0, 1.0);
 
-        float ampl = 1. * aX;
+      
+          // aX = 1.;
+        float ampl = 1.;
         float bienDoX = 1.* ampl;
         float bienDoY = 1.5 * ampl;
 
-        float lowerBound = 2.;
+        float lowerBound = 3.;
         
         transformed.y *= abs((sin((instanceUV.x)*50.+ uTime* 2.) + lowerBound ) * bienDoX + 1.);
         transformed.y *= abs((sin((instanceUV.y)*30.+ uTime* 2.) + lowerBound ) * bienDoY);
-        transformed.y = 10.;
+          
+        // transformed.y *= 10.;
+        //stage 1:
+        if(uProgress <= 3.0){
+          // transformed.y *= (1. * clamp(1. - uProgress * (1.-distX)*1., 0.0, 0.5 + uProgress));
+
+          // float tocDoChamDay = uProgress + clamp( uProgress - 1.5, 0.0, 1.0)*uProgress*uProgress*5.;
+          float tocDoChamDay = uProgress;
+          float heSoDistX = (1.-distX / clamp( 1. + uProgress - 1., 1., 2.0));
+          float vHesoY1 = smoothstep(0.0,  0.6 , 1. - (heSoDistX*tocDoChamDay));
+          vHesoYForColor = vHesoY1;
+          transformed.y *= (1. * vHesoY1);
+        }
+        // else if (uProgress <= 2.0){
+        //   transformed.y *= (1. * smoothstep(0.0, 0.0 + uProgress/2., 1. - uProgress * (1.-distX)*1.));
+        // }
+        //stage 2:
+
+        // transformed.y *= (1. + 10. * ((1.-uProgress)*clamp(distX,0.+uProgress*2.,1.)));
         //by circle
-        // transformed.y *= (sin((distX )*20.+ uTime* 2.) + 1.)*ampl*7.;
+        // transformed.y *= abs(sin((dist)*20.+ uTime* 2.) + 1.)*7.;
+   
         }
 
         vHeightUV = clamp(position.y*2., 0.0, 1.0);
@@ -349,10 +402,10 @@ export default class App {
         //SCALE
 
         transformed *=  (transition.g);
-        transformed.y +=  transition.r*200.;
+        // transformed.y +=  transition.r*200.;
 
         vHeight = transformed.y;
-
+        vinstanceUV = instanceUV;
 
         
           `
@@ -363,6 +416,7 @@ export default class App {
         /*glsl*/ `
           #include <common>
           uniform sampler2D uFBO;
+          uniform float uProgress;
           uniform float uTime;
           uniform vec3 light_color;
           uniform vec3 ramp_color_one;
@@ -371,6 +425,12 @@ export default class App {
           uniform vec3 ramp_color_four;
           varying float vHeight;
           varying float vHeightUV;
+
+        
+
+          varying float vHesoYForColor;
+          varying vec2 vinstanceUV;
+
 
           `
       );
@@ -386,6 +446,9 @@ export default class App {
           diffuseColor.rgb = ramp_color_two;
           diffuseColor.rgb = mix(diffuseColor.rgb, ramp_color_three, vHeightUV);
           // diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp((vHeight/10. -3.) , 0., 1.));
+          if(vHesoYForColor > 0.1 && vHesoYForColor < 0.6){
+            diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, vHesoYForColor);
+          }
           `
       );
     };
@@ -419,7 +482,7 @@ export default class App {
             [i / this.iSize, j / this.iSize],
             2 * (i * this.iSize + j)
           );
-
+          // console.log(i/this.iSize, j/this.iSize)
           {
             let x = w * (i - this.iSize / 2);
             let y = 0;
@@ -439,7 +502,7 @@ export default class App {
         'instanceUV',
         new THREE.InstancedBufferAttribute(instanceUV, 2)
       );
-      console.log(instanceUV);
+      // console.log(instanceUV);
       this.scene.add(this.instanceMesh);
     });
   }
