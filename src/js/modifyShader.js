@@ -75,19 +75,21 @@ float cnoise(vec3 P){
   return 2.2 * n_xyz;
 }
 `;
-            
+
 export const modifyShader = (uniforms) => {
+
+
 
     return (shader) => {
         shader.uniforms = {
-          ...shader.uniforms,
-          ...uniforms
+            ...shader.uniforms,
+            ...uniforms
         };
-  
+
         //Modify
         //declare
         shader.vertexShader = shader.vertexShader.replace(
-          `#include <common>`,
+            `#include <common>`,
           /*glsl*/ `
             #include <common>
             uniform sampler2D uFBO;
@@ -109,11 +111,17 @@ export const modifyShader = (uniforms) => {
   
             ${noise}
             
+            float drawWaveGraph(float x, float t){
+                return clamp(pow( cos(3.14 * (2.*x+t - 1.) / 2.0), 3.0), 0.,1.);
+            }
+            float drawOneWaveGraph(float x, float t){
+                return smoothstep(0.0,1.,(1. - (pow(3.*x,2.)))/2.);
+            }
             `
         );
         //
         shader.vertexShader = shader.vertexShader.replace(
-          `#include <begin_vertex>`,
+            `#include <begin_vertex>`,
           /* glsl*/`
           #include <begin_vertex>
           
@@ -131,13 +139,25 @@ export const modifyShader = (uniforms) => {
           if(transformed.y > 0.1){
           
           // float distX  = 1.;
-          // taij
-          float distX = abs(0.5 - clamp(instanceUV.x*1., 0.0, 1.0))*2.;
+          // distX = (0 -> 1) IN GRID
+          float distX = abs(0.5 - instanceUV.x)*2.;
           distX /= uRatioGrid;
+          float distY = abs(0.5 - instanceUV.y)*2.;
+          distY /= uRatioGrid;
           float aX = clamp(distX*10. + ( uProgress) * 10., 0.0, 1.0);
   
         
-            // aX = 1.;
+       
+            
+          //test for GRAPH
+          
+         
+
+       
+
+          //stage 1:
+          if(uProgress <= 2.0){
+                 // aX = 1.;
           float ampl = 1.1;
           float bienDoX = 1.* ampl;
           float bienDoY = 1.5 * ampl;
@@ -146,29 +166,27 @@ export const modifyShader = (uniforms) => {
           
           transformed.y *= abs((sin((instanceUV.x)*50.+ uTime* 2.) + lowerBound ) * bienDoX + 1.);
           transformed.y *= abs((sin((instanceUV.y)*30.+ uTime* 2.) + lowerBound ) * bienDoY);
-            
-          //test
-        //   transformed.y *= 10.;
-          //stage 1:
-          if(uProgress <= 3.0){
+
             // transformed.y *= (1. * clamp(1. - uProgress * (1.-distX)*1., 0.0, 0.5 + uProgress));
   
             // float tocDoChamDay = uProgress + clamp( uProgress - 1.5, 0.0, 1.0)*uProgress*uProgress*5.;
+            // STAGE 2:
             float tocDoChamDay = uProgress;
             float heSoDistX = (1.-distX / clamp( 1. + uProgress - 1., 1., 2.0));
             float vHesoY1 = smoothstep(0.0,  0.6 , 1. - (heSoDistX*tocDoChamDay));
             vHesoYForColor = vHesoY1;
             transformed.y *= (1. * vHesoY1);
           }
-          // else if (uProgress <= 2.0){
-          //   transformed.y *= (1. * smoothstep(0.0, 0.0 + uProgress/2., 1. - uProgress * (1.-distX)*1.));
-          // }
-          //stage 2:
-  
-          // transformed.y *= (1. + 10. * ((1.-uProgress)*clamp(distX,0.+uProgress*2.,1.)));
-          //by circle
-          // transformed.y *= abs(sin((dist)*20.+ uTime* 2.) + 1.)*7.;
-     
+          //STAGE 3:
+          else if(uProgress <=4.){
+
+            float graphProgress = uProgress - 2.0;
+            graphProgress *= 2.;
+            float khoangRiseX = 2.4/24.;
+            float sign = clamp((instanceUV.x-0.5)/abs(instanceUV.x-0.5), 0., 1.);
+            float selectCenter = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign;
+            transformed.y *= 100. * drawOneWaveGraph(((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 1.5, graphProgress) * selectCenter;
+          }
           }
   
           vHeightUV = clamp(position.y*2., 0.0, 1.0);
@@ -177,7 +195,7 @@ export const modifyShader = (uniforms) => {
           // (x,y,z) (r,b,g)
           //SCALE
   
-          transformed *=  (transition.g);
+          transformed *=  step(0.9,transition.g);
           // transformed.y +=  transition.r*200.;
   
           vHeight = transformed.y;
@@ -188,9 +206,9 @@ export const modifyShader = (uniforms) => {
           
             `
         );
-  
+
         shader.fragmentShader = shader.fragmentShader.replace(
-          `#include <common>`,
+            `#include <common>`,
           /*glsl*/ `
             #include <common>
             uniform sampler2D uFBO;
@@ -213,9 +231,9 @@ export const modifyShader = (uniforms) => {
   
             `
         );
-  
+
         shader.fragmentShader = shader.fragmentShader.replace(
-          `#include <color_fragment>`,
+            `#include <color_fragment>`,
           /* glsl */ `
             #include <color_fragment>
             float distX = abs(0.5 - clamp(vinstanceUV.x*1., 0.0, 1.0))*2.;
@@ -250,5 +268,5 @@ export const modifyShader = (uniforms) => {
   
             `
         );
-      };
+    };
 }

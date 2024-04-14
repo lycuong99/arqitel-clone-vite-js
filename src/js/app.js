@@ -89,6 +89,12 @@ export default class App {
         console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
       },
     });
+    tl.to(this.uniforms.uProgress, {
+      value: 4,
+      onUpdate: (self) => {
+        console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
+      },
+    });
 
     
     // tl.to(this.uniforms.amplitudeWave, {
@@ -105,15 +111,15 @@ export default class App {
   init() {
     this.scene = new THREE.Scene();
 
-    // {
-    //   this.camera = new THREE.PerspectiveCamera(
-    //     75,
-    //     device.width / device.height,
-    //     0.1,
-    //     2000
-    //   );
-    //   this.camera.position.set(0, 0, 2);
-    // }
+    {
+      this.camera = new THREE.PerspectiveCamera(
+        75,
+        device.width / device.height,
+        0.1,
+        2000
+      );
+      this.camera.position.set(0, 0, 2);
+    }
 
     {
       let frustumSize = device.height;
@@ -136,7 +142,7 @@ export default class App {
       );
       this.camera.position.set(100, 100, 100);
       this.camera.lookAt(new THREE.Vector3(0, 0, 0));
-      this.camera.zoom = 10;
+
     }
 
     this.scene.add(this.camera);
@@ -241,13 +247,14 @@ export default class App {
       this.model.material = this.material;
       this.geometry = this.model.geometry;
 
-      let ratio = 3 / 4;
-      // ratio = 1 / 2;
-      const boxSize = 20;
+      let ratio = 3/4;
+      // ratio = 2;
+      let cellWidth = 24;
+      const boxSize = cellWidth * ratio;
       this.geometry.scale(boxSize, boxSize, boxSize);
       this.scene.add(this.model);
 
-      this.iSize = 100;
+      this.iSize = 129;
       let instanceSize = this.iSize ** 2;
       this.instanceMesh = new THREE.InstancedMesh(
         this.geometry,
@@ -255,7 +262,7 @@ export default class App {
         instanceSize
       );
       this.instanceMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      let w = boxSize / ratio;
+      
 
       let instanceUV = new Float32Array(instanceSize * 2); //xy
       for (let i = 0; i < this.iSize; i++) {
@@ -266,9 +273,9 @@ export default class App {
           );
           // console.log(i/this.iSize, j/this.iSize)
           {
-            let x = w * (i - this.iSize / 2);
+            let x = cellWidth * (i - this.iSize / 2);
             let y = 0;
-            let z = w * (j - this.iSize / 2);
+            let z = cellWidth * (j - this.iSize / 2);
 
             const position = new THREE.Vector3(x, y, z);
 
