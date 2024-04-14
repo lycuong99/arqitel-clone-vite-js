@@ -12,7 +12,7 @@ class Environment {
     this.ambientLight = new THREE.AmbientLight(new THREE.Color(1, 1, 1, 1), 4);
     scene.add(this.ambientLight);
 
-    const spotLight = new THREE.SpotLight('#dffb09', 10000);
+    const spotLight = new THREE.SpotLight('#dffb09', 5000);
     spotLight.decay = 1.1;
     spotLight.angle = Math.PI / 3.8;
     spotLight.distance = 3000;
