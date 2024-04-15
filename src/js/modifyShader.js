@@ -115,7 +115,7 @@ export const modifyShader = (uniforms) => {
                 return clamp(pow( cos(3.14 * (2.*x+t - 1.) / 2.0), 3.0), 0.,1.);
             }
             float drawOneWaveGraph(float x, float t){
-                return smoothstep(0.0,1.,(1. - (pow(3.*x,2.)))/2.);
+                return smoothstep(0.0,1.,(1. - (pow(3.*x,2.)))/2.)*2.;
             }
             `
         );
@@ -144,7 +144,7 @@ export const modifyShader = (uniforms) => {
           distX /= uRatioGrid;
           float distY = abs(0.5 - instanceUV.y)*2.;
           distY /= uRatioGrid;
-          float aX = clamp(distX*10. + ( uProgress) * 10., 0.0, 1.0);
+         
   
         
        
@@ -155,7 +155,7 @@ export const modifyShader = (uniforms) => {
 
        
 
-          //stage 1:
+          //stage 1: NOISE
           if(uProgress <= 2.0){
                  // aX = 1.;
           float ampl = 1.1;
@@ -177,20 +177,37 @@ export const modifyShader = (uniforms) => {
             vHesoYForColor = vHesoY1;
             transformed.y *= (1. * vHesoY1);
           }
-          //STAGE 3:
+          //STAGE 3: GRAPH
           else if(uProgress <=5.){
 
             float graphProgress = uProgress - 2.0;
-            float graphProgress2 = uProgress - 2.0 ;
+            float graphProgress2 = uProgress - 3.0 ;
 
             graphProgress *= 1.;
-            float khoangRiseX = 2.4/24.;
+            float khoangRiseX = 2./24.;
 
-
+            //transition
             float sign1 = clamp((instanceUV.x-0.5)/abs(instanceUV.x-0.5), 0., 1.);
             float selectCenter = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign1;
 
-            float graph1 = 70. * drawOneWaveGraph(((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 1.5, graphProgress) * selectCenter;
+            float apmlGraph1 = 50.;
+            float graph1X = ((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 1.5;
+            float graph1 = drawOneWaveGraph(graph1X, graphProgress);
+
+            float datas[24] = float[](0.25, 0.275, 0.3, 0.3, 0.3, 0.37, 0.4, 0.375, 0.3, 0.35, 0.3, 0.35, 0.4, 0.4, 0.375, 0.4, 0.5, 0.6, 0.55, 0.6, 0.7, 0.85, 0.975, 1.0);
+            float gY = (instanceUV.y - (0.5 - uRatioGrid/2.)) / uRatioGrid;
+            float index = floor(mix(23.,0., gY));
+            float graphData = datas[int(index)];
+
+            float hesoGiam = clamp(4. - uProgress, 0.,1. );
+            graph1 =  graph1X >  0.1 ? graphData + clamp(graph1 - graphData, 0.,1.)*(hesoGiam) : graph1;
+           
+            graph1 = apmlGraph1 *  selectCenter * (graph1);
+            // 
+
+
+
+
             // 2:
             float sign2 =  clamp((-instanceUV.x+0.5)/abs(instanceUV.x-0.5), 0., 1.);
             float selectCenter2 = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign2;
@@ -198,6 +215,8 @@ export const modifyShader = (uniforms) => {
 
 
             transformed.y *= graph1 + graph2;
+
+            // ve graph
                      
            
             // transformed.y *= 70. * drawOneWaveGraph(((instanceUV.x - 1. ) / uRatioGrid) + graphProgress + 1.5, graphProgress) * selectCenter2;

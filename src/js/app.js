@@ -22,7 +22,7 @@ export default class App {
   constructor(canvas) {
     this.canvas = canvas;
     this.gui = new GUI();
-   
+
     this.setLoaders();
     this.init();
     this.environment = new Environment(this);
@@ -39,9 +39,9 @@ export default class App {
   setUpSettings() {
     this.settings = {
       process: 0,
-      enableControl: false,
+      enableControl: false
     };
-    
+
     try {
       this.gui.add(this.settings, 'process', 0, 1, 0.01).onChange((value) => {
         this.fboMaterial.uniforms.uProgress.value = value;
@@ -49,8 +49,8 @@ export default class App {
     } catch (error) {
       console.log(error);
     }
-   
-    // this.gui.add(this.settings, 'enableControl').listen().onFinishChange(function() { 
+
+    // this.gui.add(this.settings, 'enableControl').listen().onFinishChange(function() {
     //   this.controls.enabled = this.settings.enableControl;
     // });
 
@@ -60,7 +60,7 @@ export default class App {
         start: 'top top',
         end: 'bottom top',
         endTrigger: '.sec4',
-        scrub: 1,
+        scrub: 1.5,
         onEnter: (self) => {
           console.groupEnd();
           console.group('Stage 1:');
@@ -76,8 +76,12 @@ export default class App {
     //   }
     // });
     const zoom1 = () => {
-      // this.camera.zoom = 1 + this.uniforms.uProgress.value * 0.1;
-      // this.camera.updateProjectionMatrix();
+      this.camera.zoom = 1 + this.uniforms.uProgress.value * 0.1;
+      this.camera.updateProjectionMatrix();
+    };
+    const decreaseCameraY = () => {
+      this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 12;
+      this.camera.lookAt(0, 0, 0);
     };
     tl.to(this.uniforms.uProgress, {
       value: 1,
@@ -85,6 +89,7 @@ export default class App {
         console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
 
         zoom1();
+
       }
     });
     tl.to(this.uniforms.uProgress, {
@@ -98,12 +103,15 @@ export default class App {
       value: 3,
       onUpdate: (self) => {
         console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+
+        decreaseCameraY()
       }
     });
     tl.to(this.uniforms.uProgress, {
       value: 4,
       onUpdate: (self) => {
         console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+        decreaseCameraY()
       }
     });
     tl.to(this.uniforms.uProgress, {
@@ -118,11 +126,11 @@ export default class App {
     // });
   }
   addHelpers() {
-    const axesHelper = new THREE.AxesHelper(1000);
-    this.scene.add(axesHelper);
+    // const axesHelper = new THREE.AxesHelper(1000);
+    // this.scene.add(axesHelper);
 
-    const gridHelper = new THREE.GridHelper(1000, 100);
-    this.scene.add(gridHelper);
+    // const gridHelper = new THREE.GridHelper(1000, 100);
+    // this.scene.add(gridHelper);
   }
   init() {
     this.scene = new THREE.Scene();
@@ -288,7 +296,7 @@ export default class App {
             [i / this.iSize, j / this.iSize],
             2 * (i * this.iSize + j)
           );
-          // console.log(i/this.iSize, j/this.iSize)
+          console.log(i / this.iSize, j / this.iSize);
           {
             let x = cellWidth * (i - this.iSize / 2);
             let y = 0;
