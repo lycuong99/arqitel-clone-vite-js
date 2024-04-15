@@ -186,6 +186,7 @@ export const modifyShader = (uniforms) => {
             graphProgress *= 1.;
             float khoangRiseX = 2./24.;
 
+            float datas[24] = float[](0.25, 0.275, 0.3, 0.3, 0.3, 0.37, 0.4, 0.375, 0.3, 0.35, 0.3, 0.35, 0.4, 0.4, 0.375, 0.4, 0.5, 0.6, 0.55, 0.6, 0.7, 0.85, 0.975, 1.0);
             //transition
             float sign1 = clamp((instanceUV.x-0.5)/abs(instanceUV.x-0.5), 0., 1.);
             float selectCenter = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign1;
@@ -194,13 +195,14 @@ export const modifyShader = (uniforms) => {
             float graph1X = ((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 1.5;
             float graph1 = drawOneWaveGraph(graph1X, graphProgress);
 
-            float datas[24] = float[](0.25, 0.275, 0.3, 0.3, 0.3, 0.37, 0.4, 0.375, 0.3, 0.35, 0.3, 0.35, 0.4, 0.4, 0.375, 0.4, 0.5, 0.6, 0.55, 0.6, 0.7, 0.85, 0.975, 1.0);
+            //graph
             float gY = (instanceUV.y - (0.5 - uRatioGrid/2.)) / uRatioGrid;
             float index = floor(mix(23.,0., gY));
-            float graphData = datas[int(index)];
+            float chartData = datas[int(index)];
 
-            float hesoGiam = clamp(4. - uProgress, 0.,1. );
-            graph1 =  graph1X >  0.1 ? graphData + clamp(graph1 - graphData, 0.,1.)*(hesoGiam) : graph1;
+            float hesoGiam = clamp(5.1 - uProgress, 0.,1. );
+            
+            graph1 =  graph1X >  0.1 ? chartData/1.2 + clamp(graph1 - chartData, 0.,10.)*(hesoGiam) : graph1;
            
             graph1 = apmlGraph1 *  selectCenter * (graph1);
             // 
@@ -211,9 +213,15 @@ export const modifyShader = (uniforms) => {
             // 2:
             float sign2 =  clamp((-instanceUV.x+0.5)/abs(instanceUV.x-0.5), 0., 1.);
             float selectCenter2 = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign2;
-            float graph2 =  70. * drawOneWaveGraph(((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 0.5, graphProgress) * selectCenter2;
 
+            float graph2X = ((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 0.5;
+            float graph2 =  drawOneWaveGraph(graph2X, graphProgress);
+            float chartData2 = chartData * 70./50.;
+            float hesoGiam2 = clamp(5. - uProgress, 0.,1. );
+            graph2 = graph2X >  0.1 ? chartData + clamp(graph2 - chartData2, 0.,10.)*(hesoGiam2) : graph2;
+            graph2 =  70. * graph2 * selectCenter2;
 
+            //
             transformed.y *= graph1 + graph2;
 
             // ve graph
