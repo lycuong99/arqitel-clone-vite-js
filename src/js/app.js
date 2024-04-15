@@ -17,11 +17,12 @@ const device = {
   width: window.innerWidth,
   height: window.innerHeight,
   pixelRatio: window.devicePixelRatio
-};                                                                                                                                                                                                                                        
+};
 export default class App {
   constructor(canvas) {
     this.canvas = canvas;
-
+    this.gui = new GUI();
+   
     this.setLoaders();
     this.init();
     this.environment = new Environment(this);
@@ -37,24 +38,32 @@ export default class App {
   }
   setUpSettings() {
     this.settings = {
-      process: 0
+      process: 0,
+      enableControl: false,
     };
-    this.gui = new GUI();
-    this.gui.add(this.settings, 'process', 0, 1, 0.01).onChange((value) => {
-      this.fboMaterial.uniforms.uProgress.value = value;
-
-    });
+    
+    try {
+      this.gui.add(this.settings, 'process', 0, 1, 0.01).onChange((value) => {
+        this.fboMaterial.uniforms.uProgress.value = value;
+      });
+    } catch (error) {
+      console.log(error);
+    }
+   
+    // this.gui.add(this.settings, 'enableControl').listen().onFinishChange(function() { 
+    //   this.controls.enabled = this.settings.enableControl;
+    // });
 
     let tl = gsap.timeline({
       scrollTrigger: {
         trigger: '.sec1',
         start: 'top top',
         end: 'bottom top',
-        endTrigger: '.sec3',
+        endTrigger: '.sec4',
         scrub: 1,
         onEnter: (self) => {
           console.groupEnd();
-          console.group("Stage 1:");
+          console.group('Stage 1:');
         }
       }
     });
@@ -66,37 +75,44 @@ export default class App {
     //     this.uniforms.uProgress.value = self.progress;
     //   }
     // });
+    const zoom1 = () => {
+      // this.camera.zoom = 1 + this.uniforms.uProgress.value * 0.1;
+      // this.camera.updateProjectionMatrix();
+    };
     tl.to(this.uniforms.uProgress, {
       value: 1,
       onUpdate: (self) => {
-        console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
+        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
 
-        // this.camera.zoom = 1 + this.uniforms.uProgress.value*0.1;
-        //     this.camera.updateProjectionMatrix();
-      },
+        zoom1();
+      }
     });
     tl.to(this.uniforms.uProgress, {
       value: 2,
       onUpdate: (self) => {
-        console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
-        // this.camera.zoom = 1 + this.uniforms.uProgress.value*0.1;
-        //     this.camera.updateProjectionMatrix();
-      },
+        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+        zoom1();
+      }
     });
     tl.to(this.uniforms.uProgress, {
       value: 3,
       onUpdate: (self) => {
-        console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
-      },
+        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+      }
     });
     tl.to(this.uniforms.uProgress, {
       value: 4,
       onUpdate: (self) => {
-        console.log("Stage 1 Update:",this.uniforms.uProgress.value, self);
-      },
+        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+      }
+    });
+    tl.to(this.uniforms.uProgress, {
+      value: 5,
+      onUpdate: (self) => {
+        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+      }
     });
 
-    
     // tl.to(this.uniforms.amplitudeWave, {
     //   value: 0
     // });
@@ -142,7 +158,6 @@ export default class App {
       );
       this.camera.position.set(100, 100, 100);
       this.camera.lookAt(new THREE.Vector3(0, 0, 0));
-
     }
 
     this.scene.add(this.camera);
@@ -160,6 +175,9 @@ export default class App {
 
     // this.controls = new OrbitControls(this.camera, this.canvas);
 
+    // this.gui.add(this.controls, 'enablePan').listen().onFinishChange(function (value) {
+    //   this.controls.enablePan = value
+    // });
     this.clock = new THREE.Clock();
   }
 
@@ -236,7 +254,7 @@ export default class App {
 
       amplitudeWave: { value: 0 },
       uProgress: { value: 0 },
-      uRatioGrid: {value: 24/128}
+      uRatioGrid: { value: 24 / 128 }
     };
 
     this.material.onBeforeCompile = modifyShader(this.uniforms);
@@ -247,7 +265,7 @@ export default class App {
       this.model.material = this.material;
       this.geometry = this.model.geometry;
 
-      let ratio = 3/4;
+      let ratio = 3 / 4;
       // ratio = 2;
       let cellWidth = 24;
       const boxSize = cellWidth * ratio;
@@ -262,7 +280,6 @@ export default class App {
         instanceSize
       );
       this.instanceMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      
 
       let instanceUV = new Float32Array(instanceSize * 2); //xy
       for (let i = 0; i < this.iSize; i++) {

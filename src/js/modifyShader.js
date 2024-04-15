@@ -178,14 +178,29 @@ export const modifyShader = (uniforms) => {
             transformed.y *= (1. * vHesoY1);
           }
           //STAGE 3:
-          else if(uProgress <=4.){
+          else if(uProgress <=5.){
 
             float graphProgress = uProgress - 2.0;
-            graphProgress *= 2.;
+            float graphProgress2 = uProgress - 2.0 ;
+
+            graphProgress *= 1.;
             float khoangRiseX = 2.4/24.;
-            float sign = clamp((instanceUV.x-0.5)/abs(instanceUV.x-0.5), 0., 1.);
-            float selectCenter = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign;
-            transformed.y *= 100. * drawOneWaveGraph(((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 1.5, graphProgress) * selectCenter;
+
+
+            float sign1 = clamp((instanceUV.x-0.5)/abs(instanceUV.x-0.5), 0., 1.);
+            float selectCenter = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign1;
+
+            float graph1 = 70. * drawOneWaveGraph(((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 1.5, graphProgress) * selectCenter;
+            // 2:
+            float sign2 =  clamp((-instanceUV.x+0.5)/abs(instanceUV.x-0.5), 0., 1.);
+            float selectCenter2 = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign2;
+            float graph2 =  70. * drawOneWaveGraph(((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 0.5, graphProgress) * selectCenter2;
+
+
+            transformed.y *= graph1 + graph2;
+                     
+           
+            // transformed.y *= 70. * drawOneWaveGraph(((instanceUV.x - 1. ) / uRatioGrid) + graphProgress + 1.5, graphProgress) * selectCenter2;
           }
           }
   
