@@ -59,7 +59,7 @@ export default class App {
         trigger: '.sec1',
         start: 'top top',
         end: 'bottom top',
-        endTrigger: '.sec4',
+        endTrigger: '.sec7',
         scrub: 1.5,
         onEnter: (self) => {
           console.groupEnd();
@@ -117,6 +117,13 @@ export default class App {
     tl.to(this.uniforms.uProgress, {
       value: 5,
       onUpdate: (self) => {
+        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+      }
+    });
+    tl.to(this.fboMaterial.uniforms.uProgress, {
+      value: 1,
+      onUpdate: (self) => {
+        this.uniforms.uProgress = 5 + his.fboMaterial.uniforms.uProgress;
         console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
       }
     });

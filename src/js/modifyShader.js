@@ -250,7 +250,7 @@ export const modifyShader = (uniforms) => {
           //SCALE
   
           transformed *=  step(0.9,transition.g);
-          // transformed.y +=  transition.r*200.;
+          transformed.y +=  transition.r*200.;  
   
           vHeight = transformed.y;
   
