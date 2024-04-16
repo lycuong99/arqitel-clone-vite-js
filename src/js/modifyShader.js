@@ -1,4 +1,3 @@
-
 const noise = /*glsl*/ `
 //	Classic Perlin 3D Noise 
 //	by Stefan Gustavson
@@ -77,20 +76,17 @@ float cnoise(vec3 P){
 `;
 
 export const modifyShader = (uniforms) => {
+  return (shader) => {
+    shader.uniforms = {
+      ...shader.uniforms,
+      ...uniforms
+    };
 
-
-
-    return (shader) => {
-        shader.uniforms = {
-            ...shader.uniforms,
-            ...uniforms
-        };
-
-        //Modify
-        //declare
-        shader.vertexShader = shader.vertexShader.replace(
-            `#include <common>`,
-          /*glsl*/ `
+    //Modify
+    //declare
+    shader.vertexShader = shader.vertexShader.replace(
+      `#include <common>`,
+      /*glsl*/ `
             #include <common>
             uniform sampler2D uFBO;
             uniform float uProgress;
@@ -114,15 +110,26 @@ export const modifyShader = (uniforms) => {
             float drawWaveGraph(float x, float t){
                 return clamp(pow( cos(3.14 * (2.*x+t - 1.) / 2.0), 3.0), 0.,1.);
             }
-            float drawOneWaveGraph(float x, float t){
-                return smoothstep(0.0,1.,(1. - (pow(3.*x,2.)))/2.)*2.;
+            float drawOneWaveGraph(float x){
+                return smoothstep(0.0,1.,(1. - (pow(2.0*x,2.)))/2.)*2.;
+            }
+
+            float easeOutBack(float x){
+              float c1 = 1.70158;
+              float c3 = c1 + 1.;
+              
+              return 1. + c3 * pow(x - 1., 3.) + c1 * pow(x - 1., 2.);
+            }
+
+            float easeOutCubic(float x) {
+              return 1. - pow(1. - x, 3.);
             }
             `
-        );
-        //
-        shader.vertexShader = shader.vertexShader.replace(
-            `#include <begin_vertex>`,
-          /* glsl*/`
+    );
+    //
+    shader.vertexShader = shader.vertexShader.replace(
+      `#include <begin_vertex>`,
+      /* glsl*/ `
           #include <begin_vertex>
           
         
@@ -134,9 +141,9 @@ export const modifyShader = (uniforms) => {
   
           //by sin wave cirlce
           float dist = distance(instanceUV, vec2( 0.5, 0.5));
-          vHesoYForColor = 1.;
+          vHesoYForColor = 0.;
 
-          if(transformed.y > 0.1){
+          if(transformed.y >= 0.1){
           
           // float distX  = 1.;
           // distX = (0 -> 1) IN GRID
@@ -183,7 +190,7 @@ export const modifyShader = (uniforms) => {
             float graphProgress = uProgress - 2.0;
             float graphProgress2 = uProgress - 3.0 ;
 
-            graphProgress *= 1.;
+           
             float khoangRiseX = 2./24.;
 
             float datas[24] = float[](0.25, 0.275, 0.3, 0.3, 0.3, 0.37, 0.4, 0.375, 0.3, 0.35, 0.3, 0.35, 0.4, 0.4, 0.375, 0.4, 0.5, 0.6, 0.55, 0.6, 0.7, 0.85, 0.975, 1.0);
@@ -191,36 +198,48 @@ export const modifyShader = (uniforms) => {
             float sign1 = clamp((instanceUV.x-0.5)/abs(instanceUV.x-0.5), 0., 1.);
             float selectCenter = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign1;
 
-            float apmlGraph1 = 50.;
-            float graph1X = ((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 1.5;
-            float graph1 = drawOneWaveGraph(graph1X, graphProgress);
+            float apmlGraph1 = 70.;
+            float graphX =  ((instanceUV.y - 1. ) / uRatioGrid) + graphProgress;
+            float graph1X = graphX + 1.5 ;
+            float graph1 = drawOneWaveGraph(graph1X);
 
             //graph
             float gY = (instanceUV.y - (0.5 - uRatioGrid/2.)) / uRatioGrid;
             float index = floor(mix(23.,0., gY));
             float chartData = datas[int(index)];
 
-            float hesoGiam = clamp(5.1 - uProgress, 0.,1. );
-            
-            graph1 =  graph1X >  0.1 ? chartData/1.2 + clamp(graph1 - chartData, 0.,10.)*(hesoGiam) : graph1;
-           
+            float hesoGiam = clamp(4. - uProgress, 0., 1.);
+            // hesoGiam = smoothstep(0., 1., 4. - uProgress);
+            // hesoGiam = easeOutBack(hesoGiam);
+         
+          
+      
+
+            float extra = clamp(graph1 - chartData, 0.,1. );
+
+            float ONE_UNIT = 1./24.;
+            float max1 = max(graph1, chartData);
+            float min1 = min(graph1, chartData);
+
+            graph1 = graph1*hesoGiam + chartData*(1. - hesoGiam);
+
             graph1 = apmlGraph1 *  selectCenter * (graph1);
-            // 
-
-
+            
 
 
             // 2:
-            float sign2 =  clamp((-instanceUV.x+0.5)/abs(instanceUV.x-0.5), 0., 1.);
+            float sign2 =  clamp((-(instanceUV.x - 0.5))/abs(instanceUV.x-0.5), 0., 1.);
             float selectCenter2 = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign2;
 
-            float graph2X = ((instanceUV.y - 1. ) / uRatioGrid) + graphProgress + 0.5;
-            float graph2 =  drawOneWaveGraph(graph2X, graphProgress);
-            float chartData2 = chartData * 70./50.;
-            float hesoGiam2 = clamp(5. - uProgress, 0.,1. );
-            graph2 = graph2X >  0.1 ? chartData + clamp(graph2 - chartData2, 0.,10.)*(hesoGiam2) : graph2;
+            float graph2X = graphX + 0.5;
+            float graph2 =  drawOneWaveGraph(graph2X);
+            float chartData2 = chartData * 1.5;
+            float hesoGiam2 = clamp(5.- uProgress, 0.,1. );
+            // graph2 = graph2X >=  0.3 ? chartData + clamp(graph2 - chartData2, 0.,1.)*(hesoGiam2) : graph2;
+            graph2 = graph2*hesoGiam2  + chartData2*(1. - hesoGiam2);
             graph2 =  70. * graph2 * selectCenter2;
 
+         
             //
             transformed.y *= graph1 + graph2;
 
@@ -247,11 +266,11 @@ export const modifyShader = (uniforms) => {
   
           
             `
-        );
+    );
 
-        shader.fragmentShader = shader.fragmentShader.replace(
-            `#include <common>`,
-          /*glsl*/ `
+    shader.fragmentShader = shader.fragmentShader.replace(
+      `#include <common>`,
+      /*glsl*/ `
             #include <common>
             uniform sampler2D uFBO;
             uniform float uProgress;
@@ -272,11 +291,11 @@ export const modifyShader = (uniforms) => {
   
   
             `
-        );
+    );
 
-        shader.fragmentShader = shader.fragmentShader.replace(
-            `#include <color_fragment>`,
-          /* glsl */ `
+    shader.fragmentShader = shader.fragmentShader.replace(
+      `#include <color_fragment>`,
+      /* glsl */ `
             #include <color_fragment>
             float distX = abs(0.5 - clamp(vinstanceUV.x*1., 0.0, 1.0))*2.;
             distX /= uRatioGrid;
@@ -284,31 +303,24 @@ export const modifyShader = (uniforms) => {
             vec3 hightlight = mix(ramp_color_three, ramp_color_four, vHeightUV);
   
             diffuseColor.rgb = ramp_color_two;
-            diffuseColor.rgb = mix(diffuseColor.rgb, ramp_color_three, vHeightUV);
+            // diffuseColor.rgb = mix(diffuseColor.rgb, ramp_color_three, vHeightUV);
             // diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp((vHeight/10. -3.) , 0., 1.));
   
-            
-            vec3 hightestColor = mix(hightlight, ramp_color_three, smoothstep(0.6, 1., vHesoYForColor));
             //take highest color by Y
-            if(vHesoYForColor > 0.2 && vHesoYForColor < 0.6 ){
-              // diffuseColor.rgb = mix(ramp_color_two, hightlight, vHesoYForColor);
-              hightestColor = ramp_color_four;
-              hightestColor = mix(ramp_color_three, hightlight, smoothstep(0.2, 0.6, vHesoYForColor));
-            }else if(vHesoYForColor <= 0.2){
-                hightestColor = mix(ramp_color_two, ramp_color_three, smoothstep(0.0, 0.2, vHesoYForColor));
+            vec3 hightestColor = mix(hightlight, ramp_color_three, smoothstep(0.6, 1., vHesoYForColor));
+            if(vHesoYForColor <= 0.2){
+              hightestColor = mix(ramp_color_three, ramp_color_three, smoothstep(0.0, 0.2, vHesoYForColor));
             }
-  
-            diffuseColor.rgb = mix(diffuseColor.rgb, hightestColor, vHeightUV);
-           
-  
-  
-            float vHesoTangChieuCao = vHeight/vHeightUV;
-            float maxHeightUV = 1.;
-            float maxY = vHesoTangChieuCao / maxHeightUV;
-            // vec3 maxColor =           
+            else if(vHesoYForColor > 0.2 && vHesoYForColor < 0.6 ){
+              // diffuseColor.rgb = mix(ramp_color_two, hightlight, vHesoYForColor);
+              // hightestColor = ramp_color_four;
+              hightestColor = mix(ramp_color_three, hightlight, smoothstep(0.2, 0.6, vHesoYForColor));
+            } 
             
+            diffuseColor.rgb = mix(ramp_color_two, hightestColor, vHeightUV);
+              
   
             `
-        );
-    };
-}
+    );
+  };
+};
