@@ -104,6 +104,7 @@ export const modifyShader = (uniforms) => {
             varying float vHesoYForColor;
             varying vec2 vinstanceUV;
             varying float vHesoTangChieuCao;
+            varying float vGraph2X;
   
             ${noise}
             
@@ -151,17 +152,8 @@ export const modifyShader = (uniforms) => {
           distX /= uRatioGrid;
           float distY = abs(0.5 - instanceUV.y)*2.;
           distY /= uRatioGrid;
-         
-  
-        
-       
             
           //test for GRAPH
-          
-         
-
-       
-
           //stage 1: NOISE
           if(uProgress <= 2.0){
                  // aX = 1.;
@@ -198,7 +190,7 @@ export const modifyShader = (uniforms) => {
             float sign1 = clamp((instanceUV.x-0.5)/abs(instanceUV.x-0.5), 0., 1.);
             float selectCenter = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign1;
 
-            float apmlGraph1 = 70.;
+            float apmlGraph1 = 50.;
             float graphX =  ((instanceUV.y - 1. ) / uRatioGrid) + graphProgress;
             float graph1X = graphX + 1.5 ;
             float graph1 = drawOneWaveGraph(graph1X);
@@ -232,12 +224,13 @@ export const modifyShader = (uniforms) => {
             float selectCenter2 = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign2;
 
             float graph2X = graphX + 0.5;
+            vGraph2X = graph2X;
             float graph2 =  drawOneWaveGraph(graph2X);
             float chartData2 = chartData * 1.5;
             float hesoGiam2 = clamp(5.- uProgress, 0.,1. );
             // graph2 = graph2X >=  0.3 ? chartData + clamp(graph2 - chartData2, 0.,1.)*(hesoGiam2) : graph2;
             graph2 = graph2*hesoGiam2  + chartData2*(1. - hesoGiam2);
-            graph2 =  70. * graph2 * selectCenter2;
+            graph2 =  apmlGraph1 * graph2 * selectCenter2;
 
          
             //
@@ -288,7 +281,8 @@ export const modifyShader = (uniforms) => {
   
             varying float vHesoYForColor;
             varying vec2 vinstanceUV;
-  
+            //GRAPH
+            varying float vGraph2X;
   
             `
     );
@@ -301,23 +295,34 @@ export const modifyShader = (uniforms) => {
             distX /= uRatioGrid;
             //sáng ở trên
             vec3 hightlight = mix(ramp_color_three, ramp_color_four, vHeightUV);
-  
-            diffuseColor.rgb = ramp_color_two;
+            vec3 finalColor = ramp_color_two;
             // diffuseColor.rgb = mix(diffuseColor.rgb, ramp_color_three, vHeightUV);
             // diffuseColor.rgb = mix(diffuseColor.rgb, hightlight, clamp((vHeight/10. -3.) , 0., 1.));
   
+            //STAGE 1: Wave process
             //take highest color by Y
-            vec3 hightestColor = mix(hightlight, ramp_color_three, smoothstep(0.6, 1., vHesoYForColor));
-            if(vHesoYForColor <= 0.2){
-              hightestColor = mix(ramp_color_three, ramp_color_three, smoothstep(0.0, 0.2, vHesoYForColor));
+            if(uProgress <= 2.){
+              vec3 hightestColor = mix(hightlight, ramp_color_three, smoothstep(0.6, 1., vHesoYForColor));
+              if(vHesoYForColor <= 0.2){
+                hightestColor = mix(ramp_color_three, ramp_color_three, smoothstep(0.0, 0.2, vHesoYForColor));
+              }
+              else if(vHesoYForColor > 0.2 && vHesoYForColor < 0.6 ){
+                // diffuseColor.rgb = mix(ramp_color_two, hightlight, vHesoYForColor);
+                // hightestColor = ramp_color_four;
+                hightestColor = mix(ramp_color_three, hightlight, smoothstep(0.2, 0.6, vHesoYForColor));
+              } 
+  
+  
+              finalColor = mix(ramp_color_two, hightestColor, vHeightUV);
+            }else if(uProgress <= 5.){
+              vec3 g2Color = mix(ramp_color_three, hightlight, clamp( (vGraph2X + 0.5)*1.5, 0., 1.)  );
+              finalColor = vGraph2X +0.5 > 0. && vinstanceUV.x - 0.5 < 0. ? g2Color : ramp_color_three;
             }
-            else if(vHesoYForColor > 0.2 && vHesoYForColor < 0.6 ){
-              // diffuseColor.rgb = mix(ramp_color_two, hightlight, vHesoYForColor);
-              // hightestColor = ramp_color_four;
-              hightestColor = mix(ramp_color_three, hightlight, smoothstep(0.2, 0.6, vHesoYForColor));
-            } 
+           
+
+
             
-            diffuseColor.rgb = mix(ramp_color_two, hightestColor, vHeightUV);
+            diffuseColor.rgb = finalColor;
               
   
             `

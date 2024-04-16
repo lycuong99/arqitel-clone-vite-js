@@ -80,7 +80,7 @@ export default class App {
       this.camera.updateProjectionMatrix();
     };
     const decreaseCameraY = () => {
-      this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 12;
+      this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 5;
       this.camera.lookAt(0, 0, 0);
     };
     tl.to(this.uniforms.uProgress, {
