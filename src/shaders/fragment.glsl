@@ -35,7 +35,7 @@ void main() {
   vec4 finalColor = color1;
   //Stage 1:
   if(uProgress < 1.0) {
-    finalColor = stage1(color1, color2, distFromCenter, radius, uProgress);
+    finalColor = stage1(color1, color2, distFromCenter, radius, uProgress/2.);
   }
 
   gl_FragColor = finalColor;

@@ -79,39 +79,37 @@ export default class App {
       this.camera.zoom = 1 + this.uniforms.uProgress.value * 0.1;
       this.camera.updateProjectionMatrix();
     };
+    const zoomOut = () => {
+      this.camera.zoom = 1.5 - this.uniforms.uProgress.value * 0.1;
+      this.camera.updateProjectionMatrix();
+    };
     const decreaseCameraY = () => {
       this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 5;
       this.camera.lookAt(0, 0, 0);
     };
+
     tl.to(this.uniforms.uProgress, {
       value: 1,
       onUpdate: (self) => {
-        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
-
         zoom1();
-
       }
     });
     tl.to(this.uniforms.uProgress, {
       value: 2,
       onUpdate: (self) => {
-        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
         zoom1();
       }
     });
     tl.to(this.uniforms.uProgress, {
       value: 3,
       onUpdate: (self) => {
-        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
-
-        decreaseCameraY()
+        decreaseCameraY();
       }
     });
     tl.to(this.uniforms.uProgress, {
       value: 4,
       onUpdate: (self) => {
-        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
-        decreaseCameraY()
+        decreaseCameraY();
       }
     });
     tl.to(this.uniforms.uProgress, {
@@ -120,11 +118,34 @@ export default class App {
         console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
       }
     });
-    tl.to(this.fboMaterial.uniforms.uProgress, {
-      value: 1,
+
+    // ScrollTrigger.create({
+    //   trigger: '.sec7',
+    //   start: 'top top',
+    //   // endTrigger: "#otherID",
+    //   end: 'bottom top',
+    //   // ease: 'power1.inOut',
+    //   scrub: 3,
+    //   onUpdate: (self) => {
+    //     this.fboMaterial.uniforms.uProgress.value = self.progress;
+    //     console.log(
+    //       'progress:',
+    //       self.progress.toFixed(3),
+    //       'direction:',
+    //       self.direction,
+    //       'velocity',
+    //       self.getVelocity()
+    //     );
+    //   }
+    // });
+
+    tl.to(this.uniforms.uProgress, {
+      value: 6,
+      ease: 'power1.inOut',
       onUpdate: (self) => {
-        this.uniforms.uProgress = 5 + his.fboMaterial.uniforms.uProgress;
-        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+        this.fboMaterial.uniforms.uProgress.value =  this.uniforms.uProgress.value - 5;
+        zoomOut();
+        console.log('Stage Transition Update:', this.uniforms.uProgress.value, this.fboMaterial.uniforms.uProgress.value);
       }
     });
 
@@ -133,11 +154,11 @@ export default class App {
     // });
   }
   addHelpers() {
-    // const axesHelper = new THREE.AxesHelper(1000);
-    // this.scene.add(axesHelper);
+    const axesHelper = new THREE.AxesHelper(1000);
+    this.scene.add(axesHelper);
 
-    // const gridHelper = new THREE.GridHelper(1000, 100);
-    // this.scene.add(gridHelper);
+    const gridHelper = new THREE.GridHelper(1000, 100);
+    this.scene.add(gridHelper);
   }
   init() {
     this.scene = new THREE.Scene();

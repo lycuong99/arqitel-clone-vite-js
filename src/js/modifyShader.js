@@ -133,8 +133,6 @@ export const modifyShader = (uniforms) => {
       /* glsl*/ `
           #include <begin_vertex>
           
-        
-  
           // float n = cnoise(vec3(instanceUV.x*5., instanceUV.y*5., uTime*0.1));  
           // if(transformed.y > 0.1){
           //   transformed.y *= abs( n*10.);
@@ -177,7 +175,7 @@ export const modifyShader = (uniforms) => {
             transformed.y *= (1. * vHesoY1);
           }
           //STAGE 3: GRAPH
-          else if(uProgress <=5.){
+          else if(uProgress <=6.){
 
             float graphProgress = uProgress - 2.0;
             float graphProgress2 = uProgress - 3.0 ;
@@ -249,8 +247,9 @@ export const modifyShader = (uniforms) => {
           // (x,y,z) (r,b,g)
           //SCALE
   
-          transformed *=  step(0.9,transition.g);
-          transformed.y +=  transition.r*200.;  
+          // transformed *=  step(0.9,transition.g);
+          transformed *=  smoothstep(0.1, 0.9, transition.g);
+          transformed.y +=  transition.r*100.;  
   
           vHeight = transformed.y;
   
@@ -314,7 +313,7 @@ export const modifyShader = (uniforms) => {
   
   
               finalColor = mix(ramp_color_two, hightestColor, vHeightUV);
-            }else if(uProgress <= 5.){
+            }else if(uProgress <= 6.){
               vec3 g2Color = mix(ramp_color_three, hightlight, clamp( (vGraph2X + 0.5)*1.5, 0., 1.)  );
               finalColor = vGraph2X +0.5 > 0. && vinstanceUV.x - 0.5 < 0. ? g2Color : ramp_color_three;
             }
