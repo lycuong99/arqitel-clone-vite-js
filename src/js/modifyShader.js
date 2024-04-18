@@ -113,7 +113,7 @@ export const modifyShader = (uniforms) => {
               transformed.y *= vHesoYForColor;
             }
             //STAGE 3: GRAPH
-            else if(uProgress <= 6.){
+            else if(uProgress <= 7.){
               //2 -> 3: plane -> parabol 1
               //3 -> 4: parabol1 -> graph 1, plane -> parabol 2
               //4 -> 5: graph1 -> plane, parabol 2 -> graph 2
@@ -186,10 +186,15 @@ export const modifyShader = (uniforms) => {
           //SCALE
   
           // transformed *=  step(0.9,transition.g);
-          transformed *=  smoothstep(0.0, 0.9, transition.g);
+          transformed *=  smoothstep(0.1, 0.9, transition.g);
 
           transformed.y +=  transition.r * 140.;  
-  
+          if(transformed.y >= 0.){
+            float transitionHeight = smoothstep(0.0, 1.,transition.b);
+            float height = transitionHeight*(1. + transitionHeight)*140.;
+            transformed.y =  transformed.y + height;
+
+          }
           vHeight = transformed.y;
   
           vinstanceUV = instanceUV;
@@ -250,7 +255,7 @@ export const modifyShader = (uniforms) => {
   
   
               finalColor = mix(ramp_color_two, hightestColor, vHeightUV);
-            }else if(uProgress <= 6.){
+            }else if(uProgress <= 7.){
 
               vec3 g2Color = mix(ramp_color_three, hightlight, clamp( (vGraph2X + 0.5)*1.5, 0., 1.)  );
               finalColor = vGraph2X +0.5 > 0. && vinstanceUV.x - 0.5 < 0. ? g2Color : ramp_color_three;

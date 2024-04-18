@@ -2,6 +2,7 @@ uniform float uProgress;
 uniform sampler2D uState1;
 uniform sampler2D uState2;
 varying vec2 vUv;
+uniform sampler2D uDisplacement2;
 
 vec4 stage1(vec4 color1, vec4 color2, float distFromCenter, float radius, float uProgress) {
   float outner_progress = clamp(1.1 * uProgress, 0., 1.);
@@ -34,8 +35,13 @@ void main() {
 
   vec4 finalColor = color1;
   //Stage 1:
-  if(uProgress < 1.0) {
+  if(uProgress <= 3.0) {
+    
     finalColor = stage1(color1, color2, distFromCenter, radius, uProgress);
+
+    float displacementProcess = clamp( (uProgress*1.1) ,0.,1.);
+    finalColor.b = smoothstep(0.,0.5, distFromCenter - radius * 0.5 * ( - displacementProcess + 0.5));
+    finalColor.b *= (texture2D(uDisplacement2, vec2(vUv.x, 1.-vUv.y)).r) ;
   }
 
   gl_FragColor = finalColor;

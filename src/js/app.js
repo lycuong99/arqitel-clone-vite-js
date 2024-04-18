@@ -80,11 +80,29 @@ export default class App {
       this.camera.updateProjectionMatrix();
     };
     const zoomOut = () => {
-      this.camera.zoom = 1.2 - (this.uniforms.uProgress.value-5) * 0.1;
+      
+      let process1 = this.uniforms.uProgress.value - 5;
+      let progress2 = process1 - 0.5;
+      this.camera.zoom = 1.2 - process1 * 0.2*( 1. + 3*THREE.MathUtils.clamp( progress2 , 0., 0.4));
+      this.camera.updateProjectionMatrix();
+    };
+    const rotateCamera = () => {
+      let progress = THREE.MathUtils.clamp(this.uniforms.uProgress.value - 5.5, 0., 1.);
+      let camera = this.camera;
+      let target = new THREE.Vector3(0,0,0);
+      
+      camera.position.x =  100 * ( Math.sin( Math.PI/4  - progress ) );
+      camera.position.z = 100 * (  Math.cos( Math.PI/4 - progress ) );
+      // camera.position.y=target.y+camera_offset.y
+
+      camera.lookAt(target.x,target.y,target.z);
+    }
+    const zoomOut2 = () => {
+      // this.camera.zoom = 1.2 - (this.uniforms.uProgress.value - 5) * 0.3;
       this.camera.updateProjectionMatrix();
     };
     const decreaseCameraY = () => {
-      this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 5;
+      this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 20;
       this.camera.lookAt(0, 0, 0);
     };
     let logProgress = () => {
@@ -138,10 +156,20 @@ export default class App {
     });
     tl.to(this.uniforms.uProgress, {
       value: 6,
-      ease: 'power1.inOut',
+      // ease: 'power1.inOut',
       onUpdate: (self) => {
         this.fboMaterial.uniforms.uProgress.value =  this.uniforms.uProgress.value - 5;
         zoomOut();
+        rotateCamera();
+        logProgress();
+      }
+    });
+    tl.to(this.uniforms.uProgress, {
+      value: 7,
+      ease: 'power2.inOut',
+      onUpdate: (self) => {
+        this.fboMaterial.uniforms.uProgress.value =  this.uniforms.uProgress.value - 5;
+        // zoomOut();
         logProgress();
       }
     });
@@ -255,6 +283,9 @@ export default class App {
         },
         uState2: {
           value: textureLoader.load('/texture/state3.png')
+        },
+        uDisplacement2:{
+          value: textureLoader.load('/texture/texture-displacement-map.png')
         }
       },
       vertexShader: vertex,
@@ -298,6 +329,7 @@ export default class App {
       uFBO: {
         value: new THREE.TextureLoader().load('/texture/fbo.png')
       },
+
       light_color: { value: new THREE.Color('#ffe9e9') },
       ramp_color_one: { value: new THREE.Color('#06082D') },
       // ramp_color_two: { value: new THREE.Color('#e8c91a') },
@@ -319,7 +351,7 @@ export default class App {
       this.model.material = this.material;
       this.geometry = this.model.geometry;
 
-      let ratio = 2 / 3;
+      let ratio = 3/4;
       // ratio = 2;
       let cellWidth = 24;
       const boxSize = cellWidth * ratio;
