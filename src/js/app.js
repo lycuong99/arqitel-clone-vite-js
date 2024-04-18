@@ -102,7 +102,7 @@ export default class App {
       this.camera.updateProjectionMatrix();
     };
     const decreaseCameraY = () => {
-      this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 20;
+      this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 10;
       this.camera.lookAt(0, 0, 0);
     };
     let logProgress = () => {
