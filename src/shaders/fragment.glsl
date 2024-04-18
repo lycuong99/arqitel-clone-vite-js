@@ -27,15 +27,15 @@ vec4 stage1(vec4 color1, vec4 color2, float distFromCenter, float radius, float 
 
 void main() {
   vec4 color1 = texture2D(uState1, vUv);
-  vec4 color2 = texture2D(uState2, vec2(vUv.x, 1. - vUv.y));
-
+  vec4 color2 = texture2D(uState2, vec2(vUv.x, 1.-vUv.y));
+  
   float distFromCenter = distance(vUv, vec2(0.5));
   float radius = 1.41;//sqrt of 2
 
   vec4 finalColor = color1;
   //Stage 1:
   if(uProgress < 1.0) {
-    finalColor = stage1(color1, color2, distFromCenter, radius, uProgress/2.);
+    finalColor = stage1(color1, color2, distFromCenter, radius, uProgress);
   }
 
   gl_FragColor = finalColor;

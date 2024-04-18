@@ -14,7 +14,7 @@ class Environment {
 
     const spotLight = new THREE.SpotLight('#dffb09', 5000);
     spotLight.decay = 1.1;
-    spotLight.angle = Math.PI / 3.8;
+    spotLight.angle = Math.PI / 3.5;
     spotLight.distance = 3000;
     // spotLight.position.set(-60 * 3, 80 * 3, -60 * 3);
     spotLight.position.set(-300, 200, -200);
@@ -26,8 +26,8 @@ class Environment {
     spotLight.target = target;
     // scene.add(spotLight.target);
 
-    // const spotLightHelper = new THREE.SpotLightHelper(spotLight);
-    // scene.add(spotLightHelper);
+    const spotLightHelper = new THREE.SpotLightHelper(spotLight);
+    scene.add(spotLightHelper);
   }
 }
 

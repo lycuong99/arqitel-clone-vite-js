@@ -80,24 +80,41 @@ export default class App {
       this.camera.updateProjectionMatrix();
     };
     const zoomOut = () => {
-      this.camera.zoom = 1.5 - this.uniforms.uProgress.value * 0.1;
+      this.camera.zoom = 1.2 - (this.uniforms.uProgress.value-5) * 0.1;
       this.camera.updateProjectionMatrix();
     };
     const decreaseCameraY = () => {
       this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 5;
       this.camera.lookAt(0, 0, 0);
     };
-
+    let logProgress = () => {
+      console.log(this.uniforms.uProgress.value.toFixed(2));
+    }
+    logProgress = throttle(logProgress, 1000/120);
+    function throttle(fn, delay) {
+      let timer = null;
+      return function () {
+        if (timer) {
+          return;
+        }
+        timer = setTimeout(() => {
+          fn();
+          timer = null;
+        }, delay);
+      };
+    }
     tl.to(this.uniforms.uProgress, {
       value: 1,
       onUpdate: (self) => {
         zoom1();
+        logProgress();
       }
     });
     tl.to(this.uniforms.uProgress, {
       value: 2,
       onUpdate: (self) => {
         zoom1();
+        logProgress();
       }
     });
     tl.to(this.uniforms.uProgress, {
@@ -110,12 +127,22 @@ export default class App {
       value: 4,
       onUpdate: (self) => {
         decreaseCameraY();
+        logProgress();
       }
     });
     tl.to(this.uniforms.uProgress, {
       value: 5,
       onUpdate: (self) => {
-        console.log('Stage 1 Update:', this.uniforms.uProgress.value, self);
+        logProgress();
+      }
+    });
+    tl.to(this.uniforms.uProgress, {
+      value: 6,
+      ease: 'power1.inOut',
+      onUpdate: (self) => {
+        this.fboMaterial.uniforms.uProgress.value =  this.uniforms.uProgress.value - 5;
+        zoomOut();
+        logProgress();
       }
     });
 
@@ -139,15 +166,6 @@ export default class App {
     //   }
     // });
 
-    tl.to(this.uniforms.uProgress, {
-      value: 6,
-      ease: 'power1.inOut',
-      onUpdate: (self) => {
-        this.fboMaterial.uniforms.uProgress.value =  this.uniforms.uProgress.value - 5;
-        zoomOut();
-        console.log('Stage Transition Update:', this.uniforms.uProgress.value, this.fboMaterial.uniforms.uProgress.value);
-      }
-    });
 
     // tl.to(this.uniforms.amplitudeWave, {
     //   value: 0
@@ -158,7 +176,7 @@ export default class App {
     this.scene.add(axesHelper);
 
     const gridHelper = new THREE.GridHelper(1000, 100);
-    this.scene.add(gridHelper);
+    // this.scene.add(gridHelper);
   }
   init() {
     this.scene = new THREE.Scene();
@@ -301,7 +319,7 @@ export default class App {
       this.model.material = this.material;
       this.geometry = this.model.geometry;
 
-      let ratio = 3 / 4;
+      let ratio = 2 / 3;
       // ratio = 2;
       let cellWidth = 24;
       const boxSize = cellWidth * ratio;
@@ -324,7 +342,7 @@ export default class App {
             [i / this.iSize, j / this.iSize],
             2 * (i * this.iSize + j)
           );
-          console.log(i / this.iSize, j / this.iSize);
+          // console.log(i / this.iSize, j / this.iSize);
           {
             let x = cellWidth * (i - this.iSize / 2);
             let y = 0;
