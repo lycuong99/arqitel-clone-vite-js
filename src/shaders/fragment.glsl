@@ -37,7 +37,8 @@ void main() {
   //Stage 1:
   if(uProgress <= 3.0) {
     
-    finalColor = stage1(color1, color2, distFromCenter, radius, uProgress);
+    float transitionProcess = uProgress/2.;
+    finalColor = stage1(color1, color2, distFromCenter, radius, transitionProcess);
 
     float displacementProcess = clamp( (uProgress*1.1) ,0.,1.);
     finalColor.b = smoothstep(0.,0.5, distFromCenter - radius * 0.5 * ( - displacementProcess + 0.5));

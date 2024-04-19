@@ -184,9 +184,11 @@ export const modifyShader = (uniforms) => {
         
           // (x,y,z) (r,b,g)
           //SCALE
-  
+          // G : scale
+          // R : translate/ move Y
+          // B : SCALE by Y/displacement
           // transformed *=  step(0.9,transition.g);
-          transformed *=  smoothstep(0.1, 0.9, transition.g);
+          transformed *=  smoothstep(0.01, 0.9, transition.g);
 
           transformed.y +=  transition.r * 140.;  
           if(transformed.y >= 0.){
@@ -248,23 +250,27 @@ export const modifyShader = (uniforms) => {
                 hightestColor = mix(ramp_color_three, ramp_color_three, smoothstep(0.0, 0.2, vHesoYForColor));
               }
               else if(vHesoYForColor > 0.2 && vHesoYForColor < 0.6 ){
-                // diffuseColor.rgb = mix(ramp_color_two, hightlight, vHesoYForColor);
-                // hightestColor = ramp_color_four;
+                //wave to plane
                 hightestColor = mix(ramp_color_three, hightlight, smoothstep(0.2, 0.6, vHesoYForColor));
               } 
   
   
               finalColor = mix(ramp_color_two, hightestColor, vHeightUV);
             }else if(uProgress <= 7.){
-
               vec3 g2Color = mix(ramp_color_three, hightlight, clamp( (vGraph2X + 0.5)*1.5, 0., 1.)  );
               finalColor = vGraph2X +0.5 > 0. && vinstanceUV.x - 0.5 < 0. ? g2Color : ramp_color_three;
 
-              float processColorCircleLanRa = clamp(uProgress - 5., 0., 1.);
+              float transitionProcess = (uProgress - 5.)*0.5;
+              float processColorCircleLanRa = clamp(transitionProcess, 0., 1.);
               finalColor = mix(finalColor, ramp_color_three, smoothstep(0.1, 1., processColorCircleLanRa*4.));
 
-              finalColor = mix(finalColor, hightlight, clamp((vHeight/140. - 0.2) , 0., 1.));
-              finalColor+= clamp((vHeight/140. - 0.2) , 0., 1.)/10.;
+              //change texture
+              if(uProgress >= 5.){
+
+                finalColor = mix(finalColor, hightlight, clamp((vHeight/140. - 0.2) , 0., 1.));
+                finalColor+= clamp((vHeight/140. - 0.2) , 0., 1.)/10.;
+              }
+              
             }
 
             diffuseColor.rgb = finalColor;

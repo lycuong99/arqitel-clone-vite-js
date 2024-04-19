@@ -91,8 +91,8 @@ export default class App {
       let camera = this.camera;
       let target = new THREE.Vector3(0,0,0);
       
-      camera.position.x =  100 * ( Math.sin( Math.PI/4  - progress ) );
-      camera.position.z = 100 * (  Math.cos( Math.PI/4 - progress ) );
+      camera.position.x =  100 * ( Math.sin( Math.PI/4  - progress*1.3 ) );
+      camera.position.z = 100 * (  Math.cos( Math.PI/4 - progress*1.3 ) );
       // camera.position.y=target.y+camera_offset.y
 
       camera.lookAt(target.x,target.y,target.z);
