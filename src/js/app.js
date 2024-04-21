@@ -11,6 +11,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Environment from './Environtment';
 import { modifyShader } from './modifyShader';
+import { setupAnimation } from './animation';
 gsap.registerPlugin(ScrollTrigger);
 
 const device = {
@@ -35,6 +36,7 @@ export default class App {
 
     this.addHelpers();
     this.setUpSettings();
+    
   }
   setUpSettings() {
     this.settings = {
@@ -50,161 +52,15 @@ export default class App {
       console.log(error);
     }
 
-    // this.gui.add(this.settings, 'enableControl').listen().onFinishChange(function() {
-    //   this.controls.enabled = this.settings.enableControl;
-    // });
+    setupAnimation(this);
 
-    let tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: '.sec1',
-        start: 'top top',
-        end: 'bottom top',
-        endTrigger: '.sec7',
-        scrub: 1.5,
-        onEnter: (self) => {
-          console.groupEnd();
-          console.group('Stage 1:');
-        }
-      }
-    });
-    //stage 1
-
-    // tl.to(this.fboMaterial.uniforms.uProgress, {
-    //   value: 1,
-    //   onComplete: (self) => {
-    //     this.uniforms.uProgress.value = self.progress;
-    //   }
-    // });
-    const zoom1 = () => {
-      this.camera.zoom = 1 + this.uniforms.uProgress.value * 0.1;
-      this.camera.updateProjectionMatrix();
-    };
-    const zoomOut = () => {
-      
-      let process1 = this.uniforms.uProgress.value - 5;
-      let progress2 = process1 - 0.5;
-      this.camera.zoom = 1.2 - process1 * 0.2*( 1. + 3*THREE.MathUtils.clamp( progress2 , 0., 0.4));
-      this.camera.updateProjectionMatrix();
-    };
-    const rotateCamera = () => {
-      let progress = THREE.MathUtils.clamp(this.uniforms.uProgress.value - 5.5, 0., 1.);
-      let camera = this.camera;
-      let target = new THREE.Vector3(0,0,0);
-      
-      camera.position.x =  100 * ( Math.sin( Math.PI/4  - progress*1.3 ) );
-      camera.position.z = 100 * (  Math.cos( Math.PI/4 - progress*1.3 ) );
-      // camera.position.y=target.y+camera_offset.y
-
-      camera.lookAt(target.x,target.y,target.z);
-    }
-    const zoomOut2 = () => {
-      // this.camera.zoom = 1.2 - (this.uniforms.uProgress.value - 5) * 0.3;
-      this.camera.updateProjectionMatrix();
-    };
-    const decreaseCameraY = () => {
-      this.camera.position.y = 100 - (this.uniforms.uProgress.value - 2) * 10;
-      this.camera.lookAt(0, 0, 0);
-    };
-    let logProgress = () => {
-      console.log(this.uniforms.uProgress.value.toFixed(2));
-    }
-    logProgress = throttle(logProgress, 1000/120);
-    function throttle(fn, delay) {
-      let timer = null;
-      return function () {
-        if (timer) {
-          return;
-        }
-        timer = setTimeout(() => {
-          fn();
-          timer = null;
-        }, delay);
-      };
-    }
-    tl.to(this.uniforms.uProgress, {
-      value: 1,
-      onUpdate: (self) => {
-        zoom1();
-        logProgress();
-      }
-    });
-    tl.to(this.uniforms.uProgress, {
-      value: 2,
-      onUpdate: (self) => {
-        zoom1();
-        logProgress();
-      }
-    });
-    tl.to(this.uniforms.uProgress, {
-      value: 3,
-      onUpdate: (self) => {
-        decreaseCameraY();
-      }
-    });
-    tl.to(this.uniforms.uProgress, {
-      value: 4,
-      onUpdate: (self) => {
-        decreaseCameraY();
-        logProgress();
-      }
-    });
-    tl.to(this.uniforms.uProgress, {
-      value: 5,
-      onUpdate: (self) => {
-        logProgress();
-      }
-    });
-    tl.to(this.uniforms.uProgress, {
-      value: 6,
-      // ease: 'power1.inOut',
-      onUpdate: (self) => {
-        this.fboMaterial.uniforms.uProgress.value =  this.uniforms.uProgress.value - 5;
-        zoomOut();
-        rotateCamera();
-        logProgress();
-      }
-    });
-    tl.to(this.uniforms.uProgress, {
-      value: 7,
-      ease: 'power2.inOut',
-      onUpdate: (self) => {
-        this.fboMaterial.uniforms.uProgress.value =  this.uniforms.uProgress.value - 5;
-        // zoomOut();
-        logProgress();
-      }
-    });
-
-    // ScrollTrigger.create({
-    //   trigger: '.sec7',
-    //   start: 'top top',
-    //   // endTrigger: "#otherID",
-    //   end: 'bottom top',
-    //   // ease: 'power1.inOut',
-    //   scrub: 3,
-    //   onUpdate: (self) => {
-    //     this.fboMaterial.uniforms.uProgress.value = self.progress;
-    //     console.log(
-    //       'progress:',
-    //       self.progress.toFixed(3),
-    //       'direction:',
-    //       self.direction,
-    //       'velocity',
-    //       self.getVelocity()
-    //     );
-    //   }
-    // });
-
-
-    // tl.to(this.uniforms.amplitudeWave, {
-    //   value: 0
-    // });
   }
   addHelpers() {
     const axesHelper = new THREE.AxesHelper(1000);
     this.scene.add(axesHelper);
 
     const gridHelper = new THREE.GridHelper(1000, 100);
-    // this.scene.add(gridHelper);
+    this.scene.add(gridHelper);
   }
   init() {
     this.scene = new THREE.Scene();
@@ -286,6 +142,12 @@ export default class App {
         },
         uDisplacement2:{
           value: textureLoader.load('/texture/texture-displacement-map.png')
+        },
+        uState3:{
+          value: textureLoader.load('/texture/texture-mask-street.png')
+        },
+        uDisplacement3: {
+          value: textureLoader.load('/texture/texture-displacement-street.png')
         }
       },
       vertexShader: vertex,
@@ -325,7 +187,7 @@ export default class App {
 
     this.uniforms = {
       uTime: { value: 0 },
-      aoMap: { value: this.aoTexture },
+      // aoMap: { value: this.aoTexture },
       uFBO: {
         value: new THREE.TextureLoader().load('/texture/fbo.png')
       },

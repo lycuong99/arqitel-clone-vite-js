@@ -113,7 +113,7 @@ export const modifyShader = (uniforms) => {
               transformed.y *= vHesoYForColor;
             }
             //STAGE 3: GRAPH
-            else if(uProgress <= 7.){
+            else if(uProgress <= 8.){
               //2 -> 3: plane -> parabol 1
               //3 -> 4: parabol1 -> graph 1, plane -> parabol 2
               //4 -> 5: graph1 -> plane, parabol 2 -> graph 2
@@ -188,15 +188,22 @@ export const modifyShader = (uniforms) => {
           // R : translate/ move Y
           // B : SCALE by Y/displacement
           // transformed *=  step(0.9,transition.g);
+        
+
           transformed *=  smoothstep(0.01, 0.9, transition.g);
-
-          transformed.y +=  transition.r * 140.;  
-          if(transformed.y >= 0.){
-            float transitionHeight = smoothstep(0.0, 1.,transition.b);
-            float height = transitionHeight*(1. + transitionHeight)*140.;
-            transformed.y =  transformed.y + height;
-
-          }
+          //--
+          bool isUpPartBeforeAddR = transformed.y >= 0.;
+          float yBeforeAddR = transformed.y;
+          //--
+          float MAX_HEIGHT = 180.;
+          float fly =  transition.r*MAX_HEIGHT;
+          float transitionHeight = smoothstep(0.0, 1.,transition.b);
+          float height = transitionHeight*(1. + transitionHeight)*MAX_HEIGHT;
+            transformed.y += fly;
+            if(transition.b > 0.0 && isUpPartBeforeAddR)
+            {
+              transformed.y = transformed.y + transitionHeight*MAX_HEIGHT ;
+            }
           vHeight = transformed.y;
   
           vinstanceUV = instanceUV;
@@ -256,7 +263,7 @@ export const modifyShader = (uniforms) => {
   
   
               finalColor = mix(ramp_color_two, hightestColor, vHeightUV);
-            }else if(uProgress <= 7.){
+            }else if(uProgress <= 8.){
               vec3 g2Color = mix(ramp_color_three, hightlight, clamp( (vGraph2X + 0.5)*1.5, 0., 1.)  );
               finalColor = vGraph2X +0.5 > 0. && vinstanceUV.x - 0.5 < 0. ? g2Color : ramp_color_three;
 
