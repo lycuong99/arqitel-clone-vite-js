@@ -2,9 +2,11 @@ uniform float uProgress;
 uniform sampler2D uState1;
 uniform sampler2D uState2;
 uniform sampler2D uState3;
+uniform sampler2D uState4;
 varying vec2 vUv;
 uniform sampler2D uDisplacement2;
 uniform sampler2D uDisplacement3;
+uniform sampler2D uDisplacement4;
 
 vec2 rotate(vec2 v, float a) {
   float s = sin(a);
@@ -41,9 +43,11 @@ void main() {
   vec4 color1 = texture2D(uState1, vUv);
   vec4 color2 = texture2D(uState2, vec2(vUv.x, 1. - vUv.y));
   vec4 color3 = texture2D(uState3, vec2(vUv.x, 1. - vUv.y));
+  vec4 color4 = texture2D(uState4, vec2(vUv.x, 1. - vUv.y));
 
   vec4 displacement2Map = texture2D(uDisplacement2, vec2(vUv.x, 1. - vUv.y));
   vec4 displacement3Map = texture2D(uDisplacement3, vec2(vUv.x, 1. - vUv.y));
+  vec4 displacement4Map = texture2D(uDisplacement4, vec2(vUv.x, 1. - vUv.y));
 
   float distFromCenter = distance(vUv, vec2(0.5));
   float radius = 1.41;//sqrt of 2
@@ -60,11 +64,6 @@ void main() {
   // finalColor.b = displacement2Map.r * smoothstep(0., 1., displacementProcess );
 
 //2->3
-  if(uProgress > 2. && uProgress <= 4.) {
-
-  }
-  float progressFrom3 = clamp(3. - uProgress, 0., 1.);
-  
  
   float progressTo3 = clamp((uProgress - 2. + 0.5)/2., 0., 1.);
   float outner_progress = clamp(1.1 * progressTo3, 0., 1.);
@@ -79,10 +78,9 @@ void main() {
   if(uProgress > 1.){
     finalColor.g = scale;
     float a = smoothstep( 0., outerCircle,(distFromCenter - outerCircle + 0.5));
+
     finalColor.b *= a;
     // finalColor.r *= 1.-a;
-
-    
   }
 
   float progressTo35 = clamp((uProgress - 2. + 0.15)/2., 0., 1.);
@@ -92,14 +90,35 @@ void main() {
     innerCircle = 1. - smoothstep((inner_progress - deltaCircle) * radius, inner_progress * radius, distFromCenter);
    outerCircle = 1. - smoothstep((outner_progress - deltaCircle) * radius, outner_progress * radius, distFromCenter);
    displacement = outerCircle - innerCircle;
-   finalColor.r += displacement/2.;
-  // finalColor.b *= progressFrom3;
+   finalColor.r += displacement * 0.75;
 
-//  float transitionProcess2To3 = clamp((uProgress-2.)/2. , 0.,1.) ;
-//     finalColor = stage1(color2, color3, distFromCenter, radius, transitionProcess2To3);
+  float scaleY = clamp(outerCircle - distFromCenter, 0., 1.)*(0.5 - distFromCenter);
+  finalColor.b += scaleY*displacement3Map.r * 8.;
 
-//   float displacementProcess2 = clamp( (transitionProcess2To3*2. -0.4) ,0.,1.);
-  finalColor.b += clamp(innerCircle - distFromCenter, 0., 1.)*(0.5 - distFromCenter)*displacement3Map.r * 10.;
+//
+float progressTo45 = clamp((uProgress -3. + 0.15)/2., 0., 1.);
+  deltaCircle = 0.1;
+  outner_progress = clamp( progressTo45, 0., 1.);
+  inner_progress = clamp( progressTo45 - 0.05, 0., 1.);
+    innerCircle = 1. - smoothstep((inner_progress - deltaCircle) * radius, inner_progress * radius, distFromCenter);
+   outerCircle = 1. - smoothstep((outner_progress - deltaCircle) * radius, outner_progress * radius, distFromCenter);
+   displacement = outerCircle - innerCircle;
+   finalColor.r += displacement * 0.75;
+  scale = mix(color3.r, color4.r, innerCircle);
+  if(uProgress > 3.){
+     finalColor.g = scale;
+     float aa = smoothstep( 0., outerCircle,(distFromCenter - outerCircle + 0.5));
+    
+    finalColor.b *= aa;
+  }
+  scaleY = clamp(outerCircle - distFromCenter, 0., 1.)*(0.5 - distFromCenter);
+  finalColor.b += scaleY*displacement4Map.r * 8.;
+
+
+
+
+
+
 
 
   gl_FragColor = finalColor;

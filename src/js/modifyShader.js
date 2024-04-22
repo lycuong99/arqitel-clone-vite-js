@@ -120,13 +120,13 @@ export const modifyShader = (uniforms) => {
               //5 -> 6: graph2 -> plane + transition texture
               float graphProgress = uProgress - 2.0;
               
-              float khoangRiseX = 2.* ONE_UNIT;
+              float graphSpaceX = 2.* ONE_UNIT;
 
               float datas[24] = float[](0.25, 0.275, 0.3, 0.3, 0.3, 0.37, 0.4, 0.375, 0.3, 0.35, 0.3, 0.35, 0.4, 0.4, 0.375, 0.4, 0.5, 0.6, 0.55, 0.6, 0.7, 0.85, 0.975, 1.0);
 
               //transition
               float sign1 = clamp((instanceUV.x-0.5)/abs(instanceUV.x-0.5), 0., 1.);
-              float selectCenter = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX) * (1./khoangRiseX) * sign1;
+              float selectCenter = clamp(graphSpaceX - (distX) , 0.0, graphSpaceX) * (1./graphSpaceX) * sign1;
 
               float apmlGraph1 = 50.;
               float graphX =  ((instanceUV.y - 1. ) / uRatioGrid) + graphProgress;
@@ -158,7 +158,7 @@ export const modifyShader = (uniforms) => {
 
               // 2:
               float sign2 =  clamp((-(instanceUV.x - 0.5))/abs(instanceUV.x-0.5), 0., 1.);
-              float selectCenter2 = clamp(khoangRiseX - (distX) , 0.0, khoangRiseX)*(1./khoangRiseX) * sign2;
+              float selectCenter2 = clamp(graphSpaceX - (distX) , 0.0, graphSpaceX)*(1./graphSpaceX) * sign2;
 
               float graph2X = graphX + 0.5;
               vGraph2X = graph2X;
@@ -179,6 +179,8 @@ export const modifyShader = (uniforms) => {
               }
             }
           }
+
+          //FOR CHANGE TEXTURE STATE
           vHeightUV = clamp(position.y*2., 0.0, 1.0);
           //apply transition by dynamic texture
         
@@ -192,17 +194,17 @@ export const modifyShader = (uniforms) => {
 
           transformed *=  smoothstep(0.01, 0.9, transition.g);
           //--
-          bool isUpPartBeforeAddR = transformed.y >= 0.;
+          bool isUpPartBeforeFly = transformed.y >= 0.;
           float yBeforeAddR = transformed.y;
           //--
-          float MAX_HEIGHT = 180.;
-          float fly =  transition.r*MAX_HEIGHT;
+          float TRANSITIOIN_HEIGHT = 180.;
+          float fly =  transition.r * TRANSITIOIN_HEIGHT;
           float transitionHeight = smoothstep(0.0, 1.,transition.b);
-          float height = transitionHeight*(1. + transitionHeight)*MAX_HEIGHT;
+          float height = transitionHeight*(1. + transitionHeight) * TRANSITIOIN_HEIGHT;
             transformed.y += fly;
-            if(transition.b > 0.0 && isUpPartBeforeAddR)
+            if(transition.b > 0.0 && isUpPartBeforeFly)
             {
-              transformed.y = transformed.y + transitionHeight*MAX_HEIGHT ;
+              transformed.y = transformed.y + transitionHeight * TRANSITIOIN_HEIGHT * 1.5;
             }
           vHeight = transformed.y;
   

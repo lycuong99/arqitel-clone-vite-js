@@ -9,7 +9,7 @@ module.exports = {
         secondary: 'var(--secondary)',
         tertiary: 'var(--tertiary)',
         color: 'var(--color)',
-        bg:"#08092d",
+        bg:"#0a0c46",
         'accent-primary': 'var(--accent-primary)',
         'accent-primary-state': 'var(--accent-primary-state)'
       }

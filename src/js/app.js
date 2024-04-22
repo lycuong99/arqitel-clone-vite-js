@@ -57,10 +57,10 @@ export default class App {
   }
   addHelpers() {
     const axesHelper = new THREE.AxesHelper(1000);
-    this.scene.add(axesHelper);
+    // this.scene.add(axesHelper);
 
     const gridHelper = new THREE.GridHelper(1000, 100);
-    this.scene.add(gridHelper);
+    // this.scene.add(gridHelper);
   }
   init() {
     this.scene = new THREE.Scene();
@@ -148,6 +148,12 @@ export default class App {
         },
         uDisplacement3: {
           value: textureLoader.load('/texture/texture-displacement-street.png')
+        },
+        uState4:{
+          value: textureLoader.load('/texture/texture-mask-tower.png')
+        },
+        uDisplacement4: {
+          value: textureLoader.load('/texture/texture-displacement-tower.png')
         }
       },
       vertexShader: vertex,
