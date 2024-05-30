@@ -56,10 +56,10 @@ export default class App {
 
   }
   addHelpers() {
-    const axesHelper = new THREE.AxesHelper(1000);
+    // const axesHelper = new THREE.AxesHelper(1000);
     // this.scene.add(axesHelper);
 
-    const gridHelper = new THREE.GridHelper(1000, 100);
+    // const gridHelper = new THREE.GridHelper(1000, 100);
     // this.scene.add(gridHelper);
   }
   init() {
@@ -176,7 +176,7 @@ export default class App {
     this.debug.position.set(0, 200, 0);
 
     this.scene.add(this.debug);
-    // this.debug.visible = false;
+    this.debug.visible = false;
   }
 
   addObjects() {
